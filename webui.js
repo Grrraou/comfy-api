@@ -54,14 +54,14 @@ async function getAvailableModels() {
 
 // API endpoint for image generation
 app.post('/api/generate', express.json(), (req, res) => {
-    const { prompt, negative, model } = req.body;
+    const { prompt, negative, model, width, height } = req.body;
     
     if (!prompt) {
         console.log('Received request body:', req.body);
         return res.status(400).json({ error: 'Prompt is required' });
     }
 
-    const command = `node generate-image.js "${prompt}" "${negative || ''}" "${model || ''}"`;
+    const command = `node generate-image.js "${prompt}" "${negative || ''}" "${model || ''}" "${width || 832}" "${height || 1216}"`;
     console.log('Executing command:', command);
     
     exec(command, (error, stdout, stderr) => {
@@ -82,7 +82,7 @@ app.post('/api/generate', express.json(), (req, res) => {
         return res.json({ 
             success: true, 
             imagePath,
-            formData: { prompt, negative, model }
+            formData: { prompt, negative, model, width, height }
         });
     });
 });
@@ -95,7 +95,7 @@ app.get('/', async (req, res) => {
         imagePath: null,
         error: null,
         models: models,
-        formData: { prompt: '', negative: '', model: '' }
+        formData: { prompt: '', negative: '', model: '', width: 832, height: 1216 }
     });
 });
 

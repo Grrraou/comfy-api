@@ -99,8 +99,18 @@
                     <% } %>
                 </select>
             </div>
+
+            <div class="form-group">
+                <label for="width">Width:</label>
+                <input type="number" id="width" name="width" value="<%= formData.width || 832 %>" min="64" max="2048" step="64">
+            </div>
+
+            <div class="form-group">
+                <label for="height">Height:</label>
+                <input type="number" id="height" name="height" value="<%= formData.height || 1216 %>" min="64" max="2048" step="64">
+            </div>
             
-            <button type="submit">Generate Image</button>
+            <button type="submit" id="generateButton">Generate Image</button>
         </form>
 
         <div class="loading" id="loading">
@@ -115,25 +125,35 @@
     </div>
 
     <script>
+        let isGenerating = false;
+        let currentFormData = null;
+
         document.getElementById('generateForm').addEventListener('submit', function(e) {
             e.preventDefault();
             
+            if (isGenerating) {
+                return; // Prevent multiple submissions
+            }
+
             const loading = document.getElementById('loading');
             const error = document.getElementById('error');
             const imageContainer = document.getElementById('imageContainer');
             const generatedImage = document.getElementById('generatedImage');
+            const generateButton = document.getElementById('generateButton');
             
             loading.style.display = 'block';
             error.style.display = 'none';
             imageContainer.style.display = 'none';
+            generateButton.disabled = true;
+            isGenerating = true;
             
-            const formData = new FormData(this);
-            
-            // Convert FormData to a plain object
-            const data = {
-                prompt: formData.get('prompt'),
-                negative: formData.get('negative'),
-                model: formData.get('model')
+            // Store current form values
+            currentFormData = {
+                prompt: document.getElementById('prompt').value,
+                negative: document.getElementById('negative').value,
+                model: document.getElementById('model').value,
+                width: document.getElementById('width').value,
+                height: document.getElementById('height').value
             };
             
             fetch('/api/generate', {
@@ -141,11 +161,13 @@
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify(data)
+                body: JSON.stringify(currentFormData)
             })
             .then(response => response.json())
             .then(data => {
                 loading.style.display = 'none';
+                generateButton.disabled = false;
+                isGenerating = false;
                 
                 if (data.error) {
                     let errorMessage = data.error;
@@ -161,17 +183,15 @@
                 }
                 
                 if (data.success) {
+                    // Add timestamp to force browser to reload the image
                     generatedImage.src = data.imagePath + '?t=' + Date.now();
                     imageContainer.style.display = 'block';
-                    
-                    // Update form data
-                    document.getElementById('prompt').value = data.formData.prompt;
-                    document.getElementById('negative').value = data.formData.negative;
-                    document.getElementById('model').value = data.formData.model;
                 }
             })
             .catch(err => {
                 loading.style.display = 'none';
+                generateButton.disabled = false;
+                isGenerating = false;
                 error.textContent = 'An error occurred while generating the image: ' + err.message;
                 error.style.display = 'block';
                 console.error('Error:', err);

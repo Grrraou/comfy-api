@@ -25,7 +25,7 @@ async function getAvailableModels() {
 }
 
 // Example workflow for text-to-image generation
-function createWorkflow(prompt, negativePrompt = "text, watermark", modelName = "dreamshaper_8.safetensors") {
+function createWorkflow(prompt, negativePrompt = "text, watermark", modelName = "dreamshaper_8.safetensors", width = 832, height = 1216) {
     return {
         "prompt": {
             "3": {
@@ -51,8 +51,8 @@ function createWorkflow(prompt, negativePrompt = "text, watermark", modelName = 
             },
             "5": {
                 "inputs": {
-                    "width": 512,
-                    "height": 512,
+                    "width": width,
+                    "height": height,
                     "batch_size": 1
                 },
                 "class_type": "EmptyLatentImage"
@@ -108,7 +108,7 @@ async function validateWorkflow(workflow) {
     }
 }
 
-async function generateImage(prompt, negativePrompt, modelName) {
+async function generateImage(prompt, negativePrompt, modelName, width, height) {
     try {
         const apiUrl = `${config.comfyuiUrl}${config.apiEndpoint}`;
         console.log('Generating image with prompt:', prompt);
@@ -116,6 +116,7 @@ async function generateImage(prompt, negativePrompt, modelName) {
             console.log('Negative prompt:', negativePrompt);
         }
         console.log('Using model:', modelName);
+        console.log('Dimensions:', width, 'x', height);
 
         // Check available models
         console.log('Checking available models...');
@@ -128,7 +129,7 @@ async function generateImage(prompt, negativePrompt, modelName) {
         }
         
         // Create and validate the workflow
-        const workflow = createWorkflow(prompt, negativePrompt, modelName);
+        const workflow = createWorkflow(prompt, negativePrompt, modelName, width, height);
         console.log('Validating workflow...');
         const validationResult = await validateWorkflow(workflow);
         console.log('Workflow validation successful:', validationResult);
@@ -216,15 +217,17 @@ const args = process.argv.slice(2);
 const prompt = args[0];
 const negativePrompt = args[1];
 const modelName = args[2];
+const width = parseInt(args[3]) || 832;
+const height = parseInt(args[4]) || 1216;
 
 if (!prompt) {
     console.error('Please provide a prompt as a command line argument');
-    console.error('Usage: node generate-image.js "your prompt here" ["negative prompt"] ["model name"]');
+    console.error('Usage: node generate-image.js "your prompt here" ["negative prompt"] ["model name"] [width] [height]');
     process.exit(1);
 }
 
 // Run the generation
-generateImage(prompt, negativePrompt, modelName)
+generateImage(prompt, negativePrompt, modelName, width, height)
     .then(() => process.exit(0))
     .catch(error => {
         console.error('Error:', error.message);
