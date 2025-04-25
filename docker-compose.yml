@@ -1,0 +1,15 @@
+version: '3.8'
+
+services:
+  comfyui-test:
+    build: .
+    image: comfyui-test
+    environment:
+      - COMFYUI_API=http://host.docker.internal:8188/api
+    restart: "no"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+volumes:
+  comfyui_models:
+  comfyui_outputs: 
