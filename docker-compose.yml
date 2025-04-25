@@ -9,6 +9,8 @@ services:
     restart: "no"
     extra_hosts:
       - "host.docker.internal:host-gateway"
+    volumes:
+      - ./public/images:/app/public/images
 
 volumes:
   comfyui_models:

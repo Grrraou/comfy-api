@@ -1,6 +1,6 @@
 # ComfyUI Test Project
 
-This project provides a test environment for interacting with a local ComfyUI instance. It uses Docker for containerization and provides a set of convenient make commands for managing the test environment.
+This project provides a test environment for interacting with a local ComfyUI instance. It uses Docker for containerization and provides a set of convenient make commands for managing the test environment. The project includes a web UI for easy image generation and visualization.
 
 ## Prerequisites
 
@@ -15,7 +15,12 @@ This project provides a test environment for interacting with a local ComfyUI in
 ├── Dockerfile           # Test container configuration
 ├── docker-compose.yml   # Docker services configuration
 ├── Makefile            # Build and management commands
-└── test-comfyui.js     # Test scripts
+├── test-comfyui.js     # Test scripts
+├── webui.js            # Web UI server
+├── views/              # Web UI templates
+│   └── index.ejs       # Main web UI template
+└── public/             # Static files
+    └── images/         # Generated images
 ```
 
 ## Getting Started
@@ -34,6 +39,26 @@ This project provides a test environment for interacting with a local ComfyUI in
    make up
    ```
 
+## Web UI
+
+The project includes a web UI for easy image generation. To start the web UI:
+
+```bash
+make webui
+```
+
+Then open your browser and navigate to:
+```
+http://localhost:3000
+```
+
+The web UI provides:
+- A form for entering prompts
+- Optional negative prompts
+- Optional model selection
+- Display of generated images
+- Error handling and feedback
+
 ## Available Commands
 
 - `make build` - Build the Docker image
@@ -45,6 +70,7 @@ This project provides a test environment for interacting with a local ComfyUI in
 - `make test` - Run tests
 - `make shell` - Shell into the test container
 - `make check-comfyui` - Check if local ComfyUI is running
+- `make webui` - Start the web UI for image generation
 - `make help` - Show all available commands
 
 ## Environment Configuration
@@ -88,4 +114,10 @@ make clean
 2. If tests fail:
    - Check the logs: `make logs`
    - Shell into the container: `make shell`
-   - Verify ComfyUI API responses using the shell 
+   - Verify ComfyUI API responses using the shell
+
+3. If the web UI isn't working:
+   - Ensure the container is running: `make ps`
+   - Check the logs: `make logs`
+   - Verify port 3000 is available
+   - Make sure all dependencies are installed: `make build` 

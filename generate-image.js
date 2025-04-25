@@ -7,7 +7,8 @@ const config = {
     comfyuiUrl: process.env.COMFYUI_URL || 'http://host.docker.internal:8188',
     apiEndpoint: '/api',
     timeout: 300000, // 5 minutes timeout for generation
-    pollInterval: 1000 // 1 second between polls
+    pollInterval: 1000, // 1 second between polls
+    outputDir: path.join(__dirname, 'public', 'images')
 };
 
 async function getAvailableModels() {
@@ -123,7 +124,6 @@ async function generateImage(prompt, negativePrompt, modelName) {
         console.log('Available models:', availableModels);
 
         if (!modelName) {
-            // Use dreamshaper_8.safetensors as default if no model specified
             modelName = "dreamshaper_8.safetensors";
         }
         
@@ -141,65 +141,68 @@ async function generateImage(prompt, negativePrompt, modelName) {
         const promptId = queueResponse.data.prompt_id;
         console.log('Prompt queued with ID:', promptId);
 
-        // Poll for completion
+        // Poll for completion and image
         console.log('Waiting for generation to complete...');
         const startTime = Date.now();
-        let isCompleted = false;
+        let imageFound = false;
 
-        while (!isCompleted) {
-            if (Date.now() - startTime > config.timeout) {
-                throw new Error('Generation timed out');
-            }
-
+        while (!imageFound && Date.now() - startTime < config.timeout) {
             try {
-                const historyResponse = await axios.get(`${apiUrl}/history/${promptId}`, {
-                    timeout: config.timeout
-                });
+                console.log('Checking history...');
+                const historyResponse = await axios.get(`${apiUrl}/history/${promptId}`);
                 const history = historyResponse.data;
                 
-                if (!history || !history[promptId]) {
-                    console.log('Waiting for history to be available...');
-                    await new Promise(resolve => setTimeout(resolve, config.pollInterval));
-                    continue;
-                }
-
-                const promptStatus = history[promptId];
-                
-                if (promptStatus.status?.completed) {
-                    console.log('Generation completed!');
-                    const outputs = promptStatus.outputs;
+                if (history[promptId] && history[promptId].outputs) {
+                    const outputs = history[promptId].outputs;
+                    console.log('Outputs found:', Object.keys(outputs));
                     
-                    // Get the image data
                     for (const nodeId in outputs) {
                         const nodeOutput = outputs[nodeId];
-                        if (nodeOutput.images) {
-                            for (const image of nodeOutput.images) {
-                                console.log('Generated image:', image.filename);
-                                console.log('Image saved in ComfyUI output directory');
+                        if (nodeOutput.images && nodeOutput.images.length > 0) {
+                            const image = nodeOutput.images[0];
+                            console.log('Found image:', image.filename);
+                            
+                            // Try to get the image
+                            try {
+                                console.log('Fetching image from:', `${apiUrl}/view?filename=${image.filename}`);
+                                const imageResponse = await axios.get(`${apiUrl}/view?filename=${image.filename}`, {
+                                    responseType: 'arraybuffer'
+                                });
+                                
+                                // Save the image
+                                const imageBuffer = Buffer.from(imageResponse.data);
+                                const outputPath = path.join(config.outputDir, 'generated.png');
+                                
+                                // Ensure the output directory exists
+                                if (!fs.existsSync(config.outputDir)) {
+                                    fs.mkdirSync(config.outputDir, { recursive: true });
+                                }
+                                
+                                fs.writeFileSync(outputPath, imageBuffer);
+                                console.log('Image saved to:', outputPath);
+                                return outputPath;
+                            } catch (error) {
+                                console.log('Image not available yet, waiting...');
                             }
                         }
                     }
-                    
-                    isCompleted = true;
-                } else if (promptStatus.status?.failed) {
-                    throw new Error(`Generation failed: ${promptStatus.status.error}`);
-                } else {
-                    console.log('Generation in progress...');
-                    await new Promise(resolve => setTimeout(resolve, config.pollInterval));
                 }
+                
+                console.log('Waiting for image...');
+                await new Promise(resolve => setTimeout(resolve, config.pollInterval));
             } catch (error) {
-                if (error.code === 'ECONNREFUSED') {
-                    throw new Error('Could not connect to ComfyUI. Is it running?');
-                }
-                throw error;
+                console.error('Error checking history:', error.message);
+                await new Promise(resolve => setTimeout(resolve, config.pollInterval));
             }
         }
+
+        throw new Error('Image not found after timeout');
     } catch (error) {
         console.error('Error:', error.message);
         if (error.response) {
             console.error('Error response:', error.response.data);
         }
-        process.exit(1);
+        throw error;
     }
 }
 
@@ -216,4 +219,9 @@ if (!prompt) {
 }
 
 // Run the generation
-generateImage(prompt, negativePrompt, modelName); 
+generateImage(prompt, negativePrompt, modelName)
+    .then(() => process.exit(0))
+    .catch(error => {
+        console.error('Error:', error.message);
+        process.exit(1);
+    }); 
