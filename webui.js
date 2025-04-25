@@ -52,6 +52,41 @@ async function getAvailableModels() {
     }
 }
 
+// API endpoint for image generation
+app.post('/api/generate', express.json(), (req, res) => {
+    const { prompt, negative, model } = req.body;
+    
+    if (!prompt) {
+        console.log('Received request body:', req.body);
+        return res.status(400).json({ error: 'Prompt is required' });
+    }
+
+    const command = `node generate-image.js "${prompt}" "${negative || ''}" "${model || ''}"`;
+    console.log('Executing command:', command);
+    
+    exec(command, (error, stdout, stderr) => {
+        if (error) {
+            console.error('Command execution error:', error);
+            console.error('stderr:', stderr);
+            console.error('stdout:', stdout);
+            return res.status(500).json({ 
+                error: 'Failed to generate image',
+                details: error.message,
+                stderr: stderr,
+                stdout: stdout
+            });
+        }
+        
+        const imagePath = '/images/generated.png';
+        console.log('Image generation completed, path:', imagePath);
+        return res.json({ 
+            success: true, 
+            imagePath,
+            formData: { prompt, negative, model }
+        });
+    });
+});
+
 // Home page
 app.get('/', async (req, res) => {
     const models = await getAvailableModels();
@@ -59,8 +94,14 @@ app.get('/', async (req, res) => {
         title: 'ComfyUI Image Generator',
         imagePath: null,
         error: null,
-        models: models
+        models: models,
+        formData: { prompt: '', negative: '', model: '' }
     });
+});
+
+// Generate image endpoint (legacy, redirects to API)
+app.post('/generate', (req, res) => {
+    res.redirect('/');
 });
 
 // API endpoint to get models
@@ -71,43 +112,6 @@ app.get('/api/models', async (req, res) => {
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
-});
-
-// Generate image endpoint
-app.post('/generate', (req, res) => {
-    const { prompt, negative, model } = req.body;
-    
-    if (!prompt) {
-        return res.render('index', {
-            title: 'ComfyUI Image Generator',
-            imagePath: null,
-            error: 'Prompt is required',
-            models: []
-        });
-    }
-
-    const command = `node generate-image.js "${prompt}" "${negative || ''}" "${model || ''}"`;
-    
-    exec(command, (error, stdout, stderr) => {
-        if (error) {
-            console.error(`Error: ${error.message}`);
-            return res.render('index', {
-                title: 'ComfyUI Image Generator',
-                imagePath: null,
-                error: 'Failed to generate image',
-                models: []
-            });
-        }
-        
-        // Assuming the image is saved in public/images/generated.png
-        const imagePath = '/images/generated.png';
-        res.render('index', {
-            title: 'ComfyUI Image Generator',
-            imagePath,
-            error: null,
-            models: []
-        });
-    });
 });
 
 app.listen(port, () => {

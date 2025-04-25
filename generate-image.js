@@ -178,6 +178,11 @@ async function generateImage(prompt, negativePrompt, modelName) {
                                     fs.mkdirSync(config.outputDir, { recursive: true });
                                 }
                                 
+                                // Delete the previous image if it exists
+                                if (fs.existsSync(outputPath)) {
+                                    fs.unlinkSync(outputPath);
+                                }
+                                
                                 fs.writeFileSync(outputPath, imageBuffer);
                                 console.log('Image saved to:', outputPath);
                                 return outputPath;
