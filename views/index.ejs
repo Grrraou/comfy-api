@@ -18,35 +18,44 @@
             border-radius: 8px;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
+        h1 {
+            color: #333;
+            text-align: center;
+        }
         .form-group {
             margin-bottom: 15px;
         }
         label {
             display: block;
             margin-bottom: 5px;
-            font-weight: bold;
+            color: #555;
         }
-        input[type="text"], textarea {
+        input[type="text"], textarea, select {
             width: 100%;
             padding: 8px;
             border: 1px solid #ddd;
             border-radius: 4px;
             box-sizing: border-box;
         }
+        textarea {
+            height: 100px;
+            resize: vertical;
+        }
         button {
             background-color: #4CAF50;
             color: white;
-            padding: 10px 20px;
+            padding: 10px 15px;
             border: none;
             border-radius: 4px;
             cursor: pointer;
+            width: 100%;
         }
         button:hover {
             background-color: #45a049;
         }
         .error {
             color: red;
-            margin-bottom: 15px;
+            margin-top: 10px;
         }
         .image-container {
             margin-top: 20px;
@@ -57,41 +66,62 @@
             border-radius: 4px;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
+        .loading {
+            text-align: center;
+            margin-top: 20px;
+            display: none;
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <h1><%= title %></h1>
         
-        <% if (error) { %>
-            <div class="error"><%= error %></div>
-        <% } %>
-
-        <form action="/generate" method="POST">
+        <form id="generateForm" action="/generate" method="POST">
             <div class="form-group">
                 <label for="prompt">Prompt:</label>
-                <textarea id="prompt" name="prompt" rows="3" required></textarea>
+                <textarea id="prompt" name="prompt" required></textarea>
             </div>
             
             <div class="form-group">
-                <label for="negative">Negative Prompt (optional):</label>
-                <textarea id="negative" name="negative" rows="2"></textarea>
+                <label for="negative">Negative Prompt:</label>
+                <textarea id="negative" name="negative"></textarea>
             </div>
-            
+
             <div class="form-group">
-                <label for="model">Model (optional):</label>
-                <input type="text" id="model" name="model">
+                <label for="model">Model:</label>
+                <select id="model" name="model">
+                    <option value="">Select a model</option>
+                    <% if (models && models.length > 0) { %>
+                        <% models.forEach(function(model) { %>
+                            <option value="<%= model %>"><%= model %></option>
+                        <% }); %>
+                    <% } %>
+                </select>
             </div>
             
             <button type="submit">Generate Image</button>
         </form>
 
+        <div class="loading" id="loading">
+            Generating image... This may take a few minutes.
+        </div>
+
+        <% if (error) { %>
+            <div class="error"><%= error %></div>
+        <% } %>
+
         <% if (imagePath) { %>
             <div class="image-container">
-                <h2>Generated Image</h2>
-                <img src="<%= imagePath %>" alt="Generated image">
+                <img src="<%= imagePath %>" alt="Generated Image">
             </div>
         <% } %>
     </div>
+
+    <script>
+        document.getElementById('generateForm').addEventListener('submit', function(e) {
+            document.getElementById('loading').style.display = 'block';
+        });
+    </script>
 </body>
 </html> 
