@@ -414,7 +414,10 @@
                 prompt += ' ' + additionalDetails;
             }
             
-            document.getElementById('promptPreview').textContent = prompt.trim();
+            // Clean up any double spaces and ensure proper spacing
+            prompt = prompt.replace(/\s+/g, ' ').trim();
+            
+            document.getElementById('promptPreview').textContent = prompt;
         }
 
         // Add event listeners for all select elements and custom inputs
