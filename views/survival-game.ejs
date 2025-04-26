@@ -18,11 +18,74 @@
 
         .sidebar {
             width: 300px;
+            min-width: 250px;
+            max-width: 400px;
             background-color: #2a2a2a;
             padding: 1rem;
             display: flex;
             flex-direction: column;
             border-right: 1px solid #3a3a3a;
+            overflow-y: auto;
+            height: 100vh;
+            transition: width 0.3s ease;
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 250px;
+                position: fixed;
+                left: -250px;
+                z-index: 1000;
+                transition: left 0.3s ease;
+            }
+
+            .sidebar.active {
+                left: 0;
+            }
+
+            .main-content {
+                margin-left: 0 !important;
+            }
+
+            .game-title {
+                font-size: 1.2rem;
+            }
+
+            .button {
+                padding: 0.6rem 1rem;
+                font-size: 0.9rem;
+            }
+
+            .stat-item {
+                font-size: 0.9rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .sidebar {
+                width: 100%;
+                left: -100%;
+            }
+
+            .game-controls {
+                flex-direction: row;
+                flex-wrap: wrap;
+                gap: 0.5rem;
+            }
+
+            .button {
+                flex: 1 1 calc(50% - 0.5rem);
+                min-width: 120px;
+            }
+        }
+
+        .main-content {
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+            height: 100vh;
+            margin-left: 0;
+            transition: margin-left 0.3s ease;
         }
 
         .game-title {
@@ -121,6 +184,12 @@
             margin-top: 0.5rem;
         }
 
+        .survivor-button {
+            background-color: #FF6B6B;
+            color: white;
+            margin-top: 0.5rem;
+        }
+
         .button:hover {
             opacity: 0.9;
             transform: translateY(-2px);
@@ -141,18 +210,52 @@
             position: absolute;
             padding: 1rem;
             background-color: rgba(0, 0, 0, 0.7);
-            border: 2px solid #ff6b6b;
+            border: 2px solid #2196F3;
             border-radius: 4px;
             color: white;
             text-decoration: none;
             font-weight: bold;
             transition: all 0.3s ease;
             z-index: 3;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.5rem;
+            min-width: 120px;
         }
 
         .area-link:hover {
             background-color: rgba(0, 0, 0, 0.9);
             transform: scale(1.05);
+        }
+
+        .area-link .area-thumb {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            border: 2px solid #2196F3;
+            overflow: hidden;
+            transition: all 0.3s ease;
+            background-color: rgba(0, 0, 0, 0.5);
+            transform-origin: center;
+            position: relative;
+            margin-top: 0.5rem;
+        }
+
+        .area-link:hover .area-thumb {
+            transform: scale(2);
+            box-shadow: 0 0 20px rgba(33, 150, 243, 0.5);
+        }
+
+        .area-link .area-thumb img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.3s ease;
+        }
+
+        .area-link:hover .area-thumb img {
+            transform: scale(1.1);
         }
 
         .area-link.top-left {
@@ -395,6 +498,296 @@
         @keyframes spin {
             to { transform: rotate(360deg); }
         }
+
+        .npc-container {
+            position: absolute;
+            display: flex;
+            gap: 1rem;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 2;
+        }
+
+        .npc {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            border: 2px solid #ff6b6b;
+            overflow: hidden;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background-color: rgba(0, 0, 0, 0.5);
+            transform-origin: center;
+        }
+
+        .npc:hover {
+            transform: scale(4);
+            z-index: 10;
+            box-shadow: 0 0 20px rgba(255, 107, 107, 0.5);
+        }
+
+        .npc img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.3s ease;
+        }
+
+        .npc:hover img {
+            transform: scale(1.1);
+        }
+
+        .npc-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.9);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .npc-modal-content {
+            background-color: #1a1a1a;
+            padding: 2rem;
+            border-radius: 8px;
+            border: 2px solid #ff6b6b;
+            max-width: 600px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+            position: relative;
+            color: #ffffff;
+        }
+
+        .npc-modal-close {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background: none;
+            border: none;
+            color: #ff6b6b;
+            font-size: 1.5rem;
+            cursor: pointer;
+            transition: color 0.3s ease;
+        }
+
+        .npc-modal-close:hover {
+            color: #ff4444;
+        }
+
+        .npc-modal-header {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid #3a3a3a;
+        }
+
+        .npc-modal-image {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            overflow: hidden;
+            border: 2px solid #ff6b6b;
+            flex-shrink: 0;
+        }
+
+        .npc-modal-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .npc-modal-info {
+            flex: 1;
+        }
+
+        .npc-modal-name {
+            font-size: 1.8rem;
+            color: #ff6b6b;
+            margin-bottom: 0.5rem;
+            font-weight: bold;
+        }
+
+        .npc-modal-description {
+            color: #cccccc;
+            margin-bottom: 1rem;
+            line-height: 1.6;
+        }
+
+        .npc-modal-attributes {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+            margin: 1.5rem 0;
+        }
+
+        .npc-modal-attribute {
+            background-color: #2a2a2a;
+            padding: 1rem;
+            border-radius: 4px;
+            border: 1px solid #3a3a3a;
+        }
+
+        .npc-modal-attribute-label {
+            color: #ff6b6b;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .npc-modal-attribute-value {
+            color: #ffffff;
+            font-size: 1.1rem;
+        }
+
+        .npc-modal-background {
+            color: #cccccc;
+            margin: 1.5rem 0;
+            padding: 1.5rem 0;
+            border-top: 1px solid #3a3a3a;
+            line-height: 1.6;
+        }
+
+        .npc-modal-additional {
+            color: #cccccc;
+            margin-top: 1.5rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid #3a3a3a;
+            line-height: 1.6;
+        }
+
+        .location-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+        }
+
+        .location-container img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .location-info {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background-color: rgba(0, 0, 0, 0.8);
+            padding: 1.5rem;
+            z-index: 2;
+            border-top: 2px solid #ff6b6b;
+        }
+
+        .location-info h2 {
+            color: #ff6b6b;
+            margin: 0 0 0.5rem 0;
+            font-size: 1.5rem;
+        }
+
+        .location-info p {
+            color: #cccccc;
+            margin: 0;
+            line-height: 1.6;
+        }
+
+        .menu-toggle {
+            display: none;
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: none;
+            border: none;
+            color: #ffffff;
+            font-size: 1.5rem;
+            cursor: pointer;
+            transition: color 0.3s ease;
+        }
+
+        .menu-toggle:hover {
+            color: #ff4444;
+        }
+
+        .description-toggle {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            background: none;
+            border: none;
+            color: #ffffff;
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: color 0.3s ease;
+            z-index: 3;
+        }
+
+        .description-toggle:hover {
+            color: #ff4444;
+        }
+
+        .location-info.hidden {
+            display: none;
+        }
+
+        .area-thumb {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            border: 2px solid #2196F3;
+            overflow: hidden;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background-color: rgba(0, 0, 0, 0.5);
+            transform-origin: center;
+            position: absolute;
+        }
+
+        .area-thumb:hover {
+            transform: scale(4);
+            z-index: 10;
+            box-shadow: 0 0 20px rgba(33, 150, 243, 0.5);
+        }
+
+        .area-thumb img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.3s ease;
+        }
+
+        .area-thumb:hover img {
+            transform: scale(1.1);
+        }
+
+        .area-thumb.top-left {
+            top: 20px;
+            left: 20px;
+        }
+
+        .area-thumb.top-right {
+            top: 20px;
+            right: 20px;
+        }
+
+        .area-thumb.bottom-left {
+            bottom: 80px;
+            left: 20px;
+        }
+
+        .area-thumb.bottom-right {
+            bottom: 80px;
+            right: 20px;
+        }
     </style>
 </head>
 <body>
@@ -406,6 +799,7 @@
         </h1>
         <div class="game-controls">
             <button id="exploreButton" class="button explore-button">Explore Surroundings</button>
+            <button id="searchSurvivorButton" class="button survivor-button">Search for Survivors</button>
             <button id="sleepButton" class="button sleep-button">Sleep</button>
             <button id="searchFoodButton" class="button food-button">Search for Food</button>
             <button id="searchWaterButton" class="button water-button">Search for Water</button>
@@ -459,6 +853,8 @@
     </div>
 
     <div class="main-content">
+        <button id="menuToggle" class="menu-toggle">☰</button>
+        <button id="descriptionToggle" class="description-toggle" title="Toggle Description">📝</button>
         <div id="startScreen" class="start-screen">
             <h2>Welcome to the Post-Apocalyptic World</h2>
             <p>In this game, you'll navigate through a world ravaged by disaster. Your choices will determine your survival. 
@@ -468,10 +864,31 @@
         </div>
 
         <div id="gameState" class="game-state">
-            <img id="locationImage" class="location-image" src="" alt="Current Location">
-            <div class="location-description">
+            <div class="location-container">
+                <img id="locationImage" src="" alt="Current Location">
+                <div id="npcContainer" class="npc-container"></div>
+            </div>
+            <div class="location-info">
                 <h2 id="locationTitle">Current Location</h2>
                 <p id="locationText">Loading location description...</p>
+            </div>
+        </div>
+
+        <div id="npcModal" class="npc-modal">
+            <div class="npc-modal-content">
+                <button class="npc-modal-close">&times;</button>
+                <div class="npc-modal-header">
+                    <div class="npc-modal-image">
+                        <img src="" alt="NPC">
+                    </div>
+                    <div class="npc-modal-info">
+                        <h3 class="npc-modal-name"></h3>
+                        <p class="npc-modal-description"></p>
+                    </div>
+                </div>
+                <div class="npc-modal-attributes"></div>
+                <div class="npc-modal-background"></div>
+                <div class="npc-modal-additional"></div>
             </div>
         </div>
 
@@ -519,6 +936,9 @@
             const loadingOverlay = document.getElementById('loadingOverlay');
             const loadingMessage = document.getElementById('loadingMessage');
             const loadingDescription = document.getElementById('loadingDescription');
+            const menuToggle = document.getElementById('menuToggle');
+            const sidebar = document.querySelector('.sidebar');
+            const mainContent = document.querySelector('.main-content');
 
             // Load game state from localStorage
             let gameData = loadGameState();
@@ -540,6 +960,7 @@
                         const discoveredAreas = new Map(Object.entries(parsed.discoveredAreas || {}));
                         const areaConnections = new Map(Object.entries(parsed.areaConnections || {}));
                         const linkPositions = new Map(Object.entries(parsed.linkPositions || {}));
+                        const areaNPCs = new Map(Object.entries(parsed.areaNPCs || {}));
                         
                         return {
                             currentLocation: parsed.currentLocation || null,
@@ -547,10 +968,13 @@
                             discoveredAreas,
                             areaConnections,
                             linkPositions,
+                            areaNPCs,
                             nextAreaId: parsed.nextAreaId || 1,
+                            nextNPCId: parsed.nextNPCId || 1,
                             daysSurvived: parsed.daysSurvived || 0,
                             currentTime: parsed.currentTime || { hours: 8, minutes: 0 },
                             maxLinkedAreas: new Map(Object.entries(parsed.maxLinkedAreas || {})),
+                            worldDescription: parsed.worldDescription || 'A world ravaged by disaster, where survival is a daily struggle. The environment is harsh, resources are scarce, and danger lurks around every corner.',
                             stats: parsed.stats || {
                                 health: 100,
                                 hunger: 100,
@@ -570,10 +994,13 @@
                     discoveredAreas: new Map(),
                     areaConnections: new Map(),
                     linkPositions: new Map(),
+                    areaNPCs: new Map(),
                     nextAreaId: 1,
+                    nextNPCId: 1,
                     daysSurvived: 0,
                     currentTime: { hours: 8, minutes: 0 },
                     maxLinkedAreas: new Map(),
+                    worldDescription: 'A world ravaged by disaster, where survival is a daily struggle. The environment is harsh, resources are scarce, and danger lurks around every corner.',
                     stats: {
                         health: 100,
                         hunger: 100,
@@ -601,6 +1028,9 @@
                     const maxLinkedAreasObj = gameData.maxLinkedAreas.size > 0
                         ? Object.fromEntries(gameData.maxLinkedAreas)
                         : {};
+                    const areaNPCsObj = gameData.areaNPCs.size > 0
+                        ? Object.fromEntries(gameData.areaNPCs)
+                        : {};
 
                     // Create the state object
                     const stateToSave = {
@@ -609,10 +1039,13 @@
                         discoveredAreas: discoveredAreasObj,
                         areaConnections: areaConnectionsObj,
                         linkPositions: linkPositionsObj,
+                        areaNPCs: areaNPCsObj,
                         nextAreaId: gameData.nextAreaId,
+                        nextNPCId: gameData.nextNPCId,
                         daysSurvived: gameData.daysSurvived,
                         currentTime: gameData.currentTime,
                         maxLinkedAreas: maxLinkedAreasObj,
+                        worldDescription: gameData.worldDescription,
                         stats: gameData.stats
                     };
 
@@ -667,6 +1100,21 @@
                     exploreButton.title = `Explore surroundings (${currentConnections.length}/${currentMaxLinked} areas discovered)`;
                 }
 
+                // Update search survivor button
+                const currentNPCs = gameData.areaNPCs.get(gameData.currentLocation.title) || [];
+                const canSearchSurvivors = currentNPCs.length < 2 && gameData.stats.stamina >= 20;
+                
+                searchSurvivorButton.disabled = !canSearchSurvivors;
+                if (searchSurvivorButton.disabled) {
+                    if (currentNPCs.length >= 2) {
+                        searchSurvivorButton.title = 'This area already has the maximum number of survivors';
+                    } else {
+                        searchSurvivorButton.title = `Not enough stamina (${gameData.stats.stamina}/20 required)`;
+                    }
+                } else {
+                    searchSurvivorButton.title = `Search for survivors (${currentNPCs.length}/2 survivors found)`;
+                }
+
                 // Update sleep button
                 sleepButton.disabled = gameData.stats.stamina >= 100;
                 sleepButton.title = sleepButton.disabled ? 'Stamina is already full' : 'Rest for 1 hour to restore stamina';
@@ -685,17 +1133,17 @@
             }
 
             function updateStats(hours) {
-                // Update hunger and thirst
-                gameData.stats.hunger -= hours * 5;
-                gameData.stats.thirst -= hours * 10;
+                // Update hunger and thirst with reduced decay rates
+                gameData.stats.hunger -= hours * 2;  // Reduced from 5 to 2 per hour
+                gameData.stats.thirst -= hours * 5;  // Reduced from 10 to 5 per hour
 
                 // Calculate health damage from negative hunger and thirst
                 let healthDamage = 0;
                 if (gameData.stats.hunger < 0) {
-                    healthDamage += Math.abs(gameData.stats.hunger);
+                    healthDamage += Math.abs(gameData.stats.hunger) * 0.5;  // Reduced health damage from hunger
                 }
                 if (gameData.stats.thirst < 0) {
-                    healthDamage += Math.abs(gameData.stats.thirst);
+                    healthDamage += Math.abs(gameData.stats.thirst) * 0.5;  // Reduced health damage from thirst
                 }
 
                 // Apply health damage
@@ -753,11 +1201,72 @@
                     if (gameData.currentLocation.imageUrl) {
                         locationImage.src = gameData.currentLocation.imageUrl;
                     }
+                    displayNPCs();
                     updateGameStats();
                     displayDiscoveredAreas();
                     updateExploreButtonState();
                 }
             }
+
+            function displayNPCs() {
+                const npcContainer = document.getElementById('npcContainer');
+                npcContainer.innerHTML = '';
+
+                const currentNPCs = gameData.areaNPCs.get(gameData.currentLocation.title) || [];
+                currentNPCs.forEach(npc => {
+                    const npcElement = document.createElement('div');
+                    npcElement.className = 'npc';
+                    npcElement.innerHTML = `<img src="${npc.imageUrl}" alt="${npc.data.name}">`;
+                    npcElement.onclick = () => showNPCDetails(npc);
+                    npcContainer.appendChild(npcElement);
+                });
+            }
+
+            function showNPCDetails(npc) {
+                const modal = document.getElementById('npcModal');
+                const modalImage = modal.querySelector('.npc-modal-image img');
+                const modalName = modal.querySelector('.npc-modal-name');
+                const modalDescription = modal.querySelector('.npc-modal-description');
+                const modalAttributes = modal.querySelector('.npc-modal-attributes');
+                const modalBackground = modal.querySelector('.npc-modal-background');
+                const modalAdditional = modal.querySelector('.npc-modal-additional');
+
+                modalImage.src = npc.imageUrl;
+                modalImage.alt = npc.data.name;
+                modalName.textContent = npc.data.name;
+                modalDescription.textContent = npc.data.description;
+
+                // Clear previous attributes
+                modalAttributes.innerHTML = '';
+
+                // Add attributes
+                Object.entries(npc.data.attributes).forEach(([key, value]) => {
+                    const attributeDiv = document.createElement('div');
+                    attributeDiv.className = 'npc-modal-attribute';
+                    attributeDiv.innerHTML = `
+                        <div class="npc-modal-attribute-label">${key}</div>
+                        <div class="npc-modal-attribute-value">${value}</div>
+                    `;
+                    modalAttributes.appendChild(attributeDiv);
+                });
+
+                modalBackground.textContent = npc.data.background;
+                modalAdditional.textContent = npc.data.additionalDetails;
+
+                modal.style.display = 'flex';
+            }
+
+            // Close modal when clicking the close button
+            document.querySelector('.npc-modal-close').addEventListener('click', () => {
+                document.getElementById('npcModal').style.display = 'none';
+            });
+
+            // Close modal when clicking outside
+            document.getElementById('npcModal').addEventListener('click', (e) => {
+                if (e.target === document.getElementById('npcModal')) {
+                    document.getElementById('npcModal').style.display = 'none';
+                }
+            });
 
             function displayDiscoveredAreas() {
                 // Remove any existing area links
@@ -794,7 +1303,12 @@
                         const link = document.createElement('a');
                         link.className = `area-link ${position}`;
                         link.href = '#';
-                        link.textContent = `→ ${area.title}`;
+                        link.innerHTML = `
+                            <span>→ ${area.title}</span>
+                            <div class="area-thumb">
+                                <img src="${area.imageUrl}" alt="${area.title}">
+                            </div>
+                        `;
                         link.onclick = (e) => {
                             e.preventDefault();
                             navigateToArea(area);
@@ -857,6 +1371,123 @@
                 advanceTime(2); // Exploring takes 2 hours
                 updateStatsDisplay();
             });
+
+            searchSurvivorButton.addEventListener('click', async () => {
+                // Check stamina
+                if (gameData.stats.stamina < 20) {
+                    showNothingFound('Not enough stamina to search for survivors (20 stamina required)');
+                    return;
+                }
+
+                // Check if we've reached the maximum number of survivors in this area
+                const currentNPCs = gameData.areaNPCs.get(gameData.currentLocation.title) || [];
+                if (currentNPCs.length >= 2) {
+                    showNothingFound('This area already has the maximum number of survivors.');
+                    return;
+                }
+
+                // 60% chance to find a survivor
+                if (Math.random() < 0.6) {
+                    await discoverNPC();
+                } else {
+                    showNothingFound('You search the area but find no survivors...');
+                }
+                
+                // Consume stamina
+                gameData.stats.stamina -= 20;
+                
+                advanceTime(2); // Searching takes 2 hours
+                updateStatsDisplay();
+            });
+
+            async function discoverNPC() {
+                try {
+                    showLoading('Exploring Surroundings', 'Searching for survivors in the area...');
+
+                    // Call Ollama API to generate NPC character
+                    const response = await fetch('/api/ollama', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            prompt: `Generate character in this world: ${gameData.worldDescription}. Current location: ${gameData.currentLocation.title}. Location description: ${gameData.currentLocation.description}.`,
+                            model: 'mistral',
+                            role: 'character_builder',
+                            stream: false
+                        })
+                    });
+
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        console.error('Ollama API error:', errorData);
+                        throw new Error(`Failed to generate NPC: ${errorData.details || response.statusText}`);
+                    }
+
+                    const responseData = await response.json();
+                    console.log('Ollama response:', responseData);
+                    
+                    // Extract the NPC data from the response
+                    let npcData;
+                    try {
+                        npcData = JSON.parse(responseData.response.choices[0].message.content);
+                    } catch (e) {
+                        console.error('Failed to parse NPC data:', e);
+                        throw new Error('Invalid NPC data format received');
+                    }
+
+                    if (!npcData.name || !npcData.description || !npcData.attributes) {
+                        throw new Error('Missing required NPC data fields');
+                    }
+
+                    // Generate and save NPC image
+                    const npcImageResponse = await fetch('/api/generate-image', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            prompt: `post-apocalyptic survivor, ${npcData.name}, ${npcData.description}, ${npcData.attributes.clothing}, detailed portrait, realistic style`,
+                            areaId: `npc_${gameData.nextNPCId}`
+                        })
+                    });
+
+                    if (!npcImageResponse.ok) {
+                        throw new Error('Failed to generate NPC image');
+                    }
+
+                    const imageData = await npcImageResponse.json();
+                    if (!imageData.success) {
+                        throw new Error(imageData.error || 'Failed to generate image');
+                    }
+
+                    // Create NPC object
+                    const newNPC = {
+                        id: gameData.nextNPCId,
+                        data: npcData,
+                        imageUrl: imageData.imageUrl.startsWith('/') ? imageData.imageUrl : `/${imageData.imageUrl}`
+                    };
+
+                    // Add NPC to current area
+                    const currentAreaNPCs = gameData.areaNPCs.get(gameData.currentLocation.title) || [];
+                    if (currentAreaNPCs.length < 2) { // Max 2 NPCs per area
+                        gameData.areaNPCs.set(gameData.currentLocation.title, [...currentAreaNPCs, newNPC]);
+                        gameData.nextNPCId++;
+                        saveGameState();
+                        displayCurrentLocation();
+                        showNothingFound(`You found a survivor: ${npcData.name}`);
+                    } else {
+                        showNothingFound('This area already has the maximum number of survivors.');
+                    }
+
+                    hideLoading();
+
+                } catch (error) {
+                    console.error('Error in discoverNPC:', error);
+                    hideLoading();
+                    showNothingFound(`Error: ${error.message}`);
+                }
+            }
 
             sleepButton.addEventListener('click', () => {
                 if (gameData.stats.stamina >= 100) {
@@ -940,17 +1571,23 @@
 
             resetButton.addEventListener('click', async () => {
                 if (confirm('Are you sure you want to reset the game? All progress will be lost.')) {
-                    // Clear the game state
+                    // Clear localStorage
+                    localStorage.removeItem('survivalGameState');
+                    
+                    // Clear all game data
                     gameData = {
                         currentLocation: null,
                         visitedLocations: new Map(),
                         discoveredAreas: new Map(),
                         areaConnections: new Map(),
                         linkPositions: new Map(),
+                        areaNPCs: new Map(),
                         nextAreaId: 1,
+                        nextNPCId: 1,
                         daysSurvived: 0,
                         currentTime: { hours: 8, minutes: 0 },
                         maxLinkedAreas: new Map(),
+                        worldDescription: 'A world ravaged by disaster, where survival is a daily struggle. The environment is harsh, resources are scarce, and danger lurks around every corner.',
                         stats: {
                             health: 100,
                             hunger: 100,
@@ -959,18 +1596,10 @@
                         }
                     };
                     
-                    // Clear localStorage
-                    localStorage.removeItem('survivalGameState');
-                    
-                    // Reset UI
-                    locationImage.src = '';
-                    locationTitle.textContent = 'Current Location';
-                    locationText.textContent = 'Loading location description...';
-                    updateGameStats();
-                    
-                    // Show start screen
-                    startScreen.style.display = 'flex';
-                    gameState.style.display = 'none';
+                    // Force reload the page after a short delay to ensure localStorage is cleared
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 100);
                 }
             });
 
@@ -1305,10 +1934,13 @@
                     discoveredAreas: new Map(),
                     areaConnections: new Map(),
                     linkPositions: new Map(),
+                    areaNPCs: new Map(),
                     nextAreaId: 1,
+                    nextNPCId: 1,
                     daysSurvived: 0,
                     currentTime: { hours: 8, minutes: 0 },
                     maxLinkedAreas: new Map(),
+                    worldDescription: 'A world ravaged by disaster, where survival is a daily struggle. The environment is harsh, resources are scarce, and danger lurks around every corner.',
                     stats: {
                         health: 100,
                         hunger: 100,
@@ -1324,6 +1956,40 @@
                 
                 // Reset stats display
                 updateStatsDisplay();
+            });
+
+            menuToggle.addEventListener('click', () => {
+                sidebar.classList.toggle('active');
+                menuToggle.textContent = sidebar.classList.contains('active') ? '✕' : '☰';
+            });
+
+            // Close sidebar when clicking outside on mobile
+            document.addEventListener('click', (e) => {
+                if (window.innerWidth <= 768 && 
+                    !sidebar.contains(e.target) && 
+                    !menuToggle.contains(e.target) && 
+                    sidebar.classList.contains('active')) {
+                    sidebar.classList.remove('active');
+                    menuToggle.textContent = '☰';
+                }
+            });
+
+            // Handle window resize
+            window.addEventListener('resize', () => {
+                if (window.innerWidth > 768) {
+                    sidebar.classList.remove('active');
+                    menuToggle.textContent = '☰';
+                }
+            });
+
+            // Add description toggle functionality
+            const descriptionToggle = document.getElementById('descriptionToggle');
+            const locationInfo = document.querySelector('.location-info');
+
+            descriptionToggle.addEventListener('click', () => {
+                locationInfo.classList.toggle('hidden');
+                descriptionToggle.textContent = locationInfo.classList.contains('hidden') ? '📄' : '📝';
+                descriptionToggle.title = locationInfo.classList.contains('hidden') ? 'Show Description' : 'Hide Description';
             });
         });
     </script>
