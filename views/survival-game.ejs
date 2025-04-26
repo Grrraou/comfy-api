@@ -103,9 +103,38 @@
             color: white;
         }
 
+        .sleep-button {
+            background-color: #00C851;
+            color: white;
+            margin-top: 0.5rem;
+        }
+
+        .food-button {
+            background-color: #ffbb33;
+            color: white;
+            margin-top: 0.5rem;
+        }
+
+        .water-button {
+            background-color: #33b5e5;
+            color: white;
+            margin-top: 0.5rem;
+        }
+
         .button:hover {
             opacity: 0.9;
             transform: translateY(-2px);
+        }
+
+        .button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .button:disabled:hover {
+            opacity: 0.5;
+            transform: none;
         }
 
         .area-link {
@@ -180,6 +209,68 @@
         .stat-label {
             color: #ff6b6b;
             font-weight: bold;
+        }
+
+        .stat-value {
+            color: #ffffff;
+        }
+
+        .stat-bar {
+            width: 100%;
+            height: 10px;
+            background-color: #1a1a1a;
+            border-radius: 5px;
+            margin-top: 0.2rem;
+            overflow: hidden;
+        }
+
+        .stat-bar-fill {
+            height: 100%;
+            transition: width 0.3s ease;
+        }
+
+        .health-bar {
+            background-color: #ff4444;
+        }
+
+        .hunger-bar {
+            background-color: #ffbb33;
+        }
+
+        .thirst-bar {
+            background-color: #33b5e5;
+        }
+
+        .stamina-bar {
+            background-color: #00C851;
+        }
+
+        .game-over {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.9);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            color: #ff4444;
+            text-align: center;
+            padding: 2rem;
+        }
+
+        .game-over h2 {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+
+        .game-over p {
+            font-size: 1.5rem;
+            margin-bottom: 2rem;
+            color: #ffffff;
         }
 
         .main-content {
@@ -261,6 +352,49 @@
             font-size: 1.2rem;
             margin-top: 1rem;
         }
+
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.8);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            color: #ffffff;
+            text-align: center;
+            padding: 2rem;
+        }
+
+        .loading-spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid #ff6b6b;
+            border-top-color: transparent;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 1rem;
+        }
+
+        .loading-message {
+            font-size: 1.2rem;
+            margin-bottom: 0.5rem;
+            color: #ff6b6b;
+        }
+
+        .loading-description {
+            font-size: 1rem;
+            color: #cccccc;
+            max-width: 400px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
     </style>
 </head>
 <body>
@@ -272,6 +406,9 @@
         </h1>
         <div class="game-controls">
             <button id="exploreButton" class="button explore-button">Explore Surroundings</button>
+            <button id="sleepButton" class="button sleep-button">Sleep</button>
+            <button id="searchFoodButton" class="button food-button">Search for Food</button>
+            <button id="searchWaterButton" class="button water-button">Search for Water</button>
         </div>
         <div class="game-stats">
             <div class="stat-item">
@@ -289,6 +426,34 @@
             <div class="stat-item">
                 <span class="stat-label">Current Time:</span>
                 <span id="currentTime">-</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Health:</span>
+                <span id="healthValue" class="stat-value">100/100</span>
+                <div class="stat-bar">
+                    <div id="healthBar" class="stat-bar-fill health-bar" style="width: 100%"></div>
+                </div>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Hunger:</span>
+                <span id="hungerValue" class="stat-value">100/100</span>
+                <div class="stat-bar">
+                    <div id="hungerBar" class="stat-bar-fill hunger-bar" style="width: 100%"></div>
+                </div>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Thirst:</span>
+                <span id="thirstValue" class="stat-value">100/100</span>
+                <div class="stat-bar">
+                    <div id="thirstBar" class="stat-bar-fill thirst-bar" style="width: 100%"></div>
+                </div>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Stamina:</span>
+                <span id="staminaValue" class="stat-value">100/100</span>
+                <div class="stat-bar">
+                    <div id="staminaBar" class="stat-bar-fill stamina-bar" style="width: 100%"></div>
+                </div>
             </div>
         </div>
     </div>
@@ -309,6 +474,18 @@
                 <p id="locationText">Loading location description...</p>
             </div>
         </div>
+
+        <div id="gameOverScreen" class="game-over" style="display: none;">
+            <h2>GAME OVER</h2>
+            <p>Your health has reached zero. You didn't survive the post-apocalyptic world.</p>
+            <button id="restartButton" class="button start-button">Start New Game</button>
+        </div>
+
+        <div id="loadingOverlay" class="loading-overlay" style="display: none;">
+            <div class="loading-spinner"></div>
+            <div id="loadingMessage" class="loading-message">Generating...</div>
+            <div id="loadingDescription" class="loading-description"></div>
+        </div>
     </div>
 
     <script>
@@ -317,6 +494,9 @@
             const resetButton = document.getElementById('resetButton');
             const exploreButton = document.getElementById('exploreButton');
             const regenButton = document.getElementById('regenButton');
+            const sleepButton = document.getElementById('sleepButton');
+            const searchFoodButton = document.getElementById('searchFoodButton');
+            const searchWaterButton = document.getElementById('searchWaterButton');
             const startScreen = document.getElementById('startScreen');
             const gameState = document.getElementById('gameState');
             const locationImage = document.getElementById('locationImage');
@@ -326,6 +506,19 @@
             const locationsVisitedSpan = document.getElementById('locationsVisited');
             const daysSurvivedSpan = document.getElementById('daysSurvived');
             const currentTimeSpan = document.getElementById('currentTime');
+            const healthValue = document.getElementById('healthValue');
+            const hungerValue = document.getElementById('hungerValue');
+            const thirstValue = document.getElementById('thirstValue');
+            const staminaValue = document.getElementById('staminaValue');
+            const healthBar = document.getElementById('healthBar');
+            const hungerBar = document.getElementById('hungerBar');
+            const thirstBar = document.getElementById('thirstBar');
+            const staminaBar = document.getElementById('staminaBar');
+            const gameOverScreen = document.getElementById('gameOverScreen');
+            const restartButton = document.getElementById('restartButton');
+            const loadingOverlay = document.getElementById('loadingOverlay');
+            const loadingMessage = document.getElementById('loadingMessage');
+            const loadingDescription = document.getElementById('loadingDescription');
 
             // Load game state from localStorage
             let gameData = loadGameState();
@@ -357,7 +550,13 @@
                             nextAreaId: parsed.nextAreaId || 1,
                             daysSurvived: parsed.daysSurvived || 0,
                             currentTime: parsed.currentTime || { hours: 8, minutes: 0 },
-                            maxLinkedAreas: new Map(Object.entries(parsed.maxLinkedAreas || {}))
+                            maxLinkedAreas: new Map(Object.entries(parsed.maxLinkedAreas || {})),
+                            stats: parsed.stats || {
+                                health: 100,
+                                hunger: 100,
+                                thirst: 100,
+                                stamina: 100
+                            }
                         };
                     }
                 } catch (error) {
@@ -374,13 +573,19 @@
                     nextAreaId: 1,
                     daysSurvived: 0,
                     currentTime: { hours: 8, minutes: 0 },
-                    maxLinkedAreas: new Map()
+                    maxLinkedAreas: new Map(),
+                    stats: {
+                        health: 100,
+                        hunger: 100,
+                        thirst: 100,
+                        stamina: 100
+                    }
                 };
             }
 
             function saveGameState() {
                 try {
-                    // Convert Maps to Objects for storage, handling empty Maps
+                    // Convert Maps to Objects for storage
                     const visitedLocationsObj = gameData.visitedLocations.size > 0 
                         ? Object.fromEntries(gameData.visitedLocations) 
                         : {};
@@ -393,6 +598,9 @@
                     const linkPositionsObj = gameData.linkPositions.size > 0
                         ? Object.fromEntries(gameData.linkPositions)
                         : {};
+                    const maxLinkedAreasObj = gameData.maxLinkedAreas.size > 0
+                        ? Object.fromEntries(gameData.maxLinkedAreas)
+                        : {};
 
                     // Create the state object
                     const stateToSave = {
@@ -404,7 +612,8 @@
                         nextAreaId: gameData.nextAreaId,
                         daysSurvived: gameData.daysSurvived,
                         currentTime: gameData.currentTime,
-                        maxLinkedAreas: Object.fromEntries(gameData.maxLinkedAreas)
+                        maxLinkedAreas: maxLinkedAreasObj,
+                        stats: gameData.stats
                     };
 
                     // Save to localStorage
@@ -418,6 +627,101 @@
                 const ampm = hours >= 12 ? 'PM' : 'AM';
                 const displayHours = hours % 12 || 12;
                 return `${displayHours}:${minutes.toString().padStart(2, '0')} ${ampm}`;
+            }
+
+            function updateStatsDisplay() {
+                // Update health
+                healthValue.textContent = `${Math.max(0, gameData.stats.health)}/100`;
+                healthBar.style.width = `${Math.max(0, gameData.stats.health)}%`;
+                
+                // Update hunger
+                hungerValue.textContent = `${gameData.stats.hunger}/100`;
+                hungerBar.style.width = `${Math.max(0, gameData.stats.hunger)}%`;
+                
+                // Update thirst
+                thirstValue.textContent = `${gameData.stats.thirst}/100`;
+                thirstBar.style.width = `${Math.max(0, gameData.stats.thirst)}%`;
+                
+                // Update stamina
+                staminaValue.textContent = `${gameData.stats.stamina}/100`;
+                staminaBar.style.width = `${gameData.stats.stamina}%`;
+
+                // Update button states based on stamina
+                updateButtonStates();
+            }
+
+            function updateButtonStates() {
+                // Update explore button
+                const currentMaxLinked = gameData.maxLinkedAreas.get(gameData.currentLocation.title);
+                const currentConnections = gameData.areaConnections.get(gameData.currentLocation.title) || [];
+                const canExplore = currentConnections.length < currentMaxLinked && gameData.stats.stamina >= 20;
+                
+                exploreButton.disabled = !canExplore;
+                if (exploreButton.disabled) {
+                    if (currentConnections.length >= currentMaxLinked) {
+                        exploreButton.title = 'All possible areas from this location have been discovered';
+                    } else {
+                        exploreButton.title = `Not enough stamina (${gameData.stats.stamina}/20 required)`;
+                    }
+                } else {
+                    exploreButton.title = `Explore surroundings (${currentConnections.length}/${currentMaxLinked} areas discovered)`;
+                }
+
+                // Update sleep button
+                sleepButton.disabled = gameData.stats.stamina >= 100;
+                sleepButton.title = sleepButton.disabled ? 'Stamina is already full' : 'Rest for 1 hour to restore stamina';
+
+                // Update search food button
+                searchFoodButton.disabled = gameData.stats.stamina < 10;
+                searchFoodButton.title = searchFoodButton.disabled ? 
+                    `Not enough stamina (${gameData.stats.stamina}/10 required)` : 
+                    'Search for food (10 stamina)';
+
+                // Update search water button
+                searchWaterButton.disabled = gameData.stats.stamina < 10;
+                searchWaterButton.title = searchWaterButton.disabled ? 
+                    `Not enough stamina (${gameData.stats.stamina}/10 required)` : 
+                    'Search for water (10 stamina)';
+            }
+
+            function updateStats(hours) {
+                // Update hunger and thirst
+                gameData.stats.hunger -= hours * 5;
+                gameData.stats.thirst -= hours * 10;
+
+                // Calculate health damage from negative hunger and thirst
+                let healthDamage = 0;
+                if (gameData.stats.hunger < 0) {
+                    healthDamage += Math.abs(gameData.stats.hunger);
+                }
+                if (gameData.stats.thirst < 0) {
+                    healthDamage += Math.abs(gameData.stats.thirst);
+                }
+
+                // Apply health damage
+                if (healthDamage > 0) {
+                    gameData.stats.health -= healthDamage;
+                }
+
+                // Check for game over
+                if (gameData.stats.health <= 0) {
+                    gameOver();
+                    return;
+                }
+
+                // Update display
+                updateStatsDisplay();
+                saveGameState();
+            }
+
+            function gameOver() {
+                // Clear game state
+                localStorage.removeItem('survivalGameState');
+                
+                // Show game over screen
+                gameOverScreen.style.display = 'flex';
+                gameState.style.display = 'none';
+                startScreen.style.display = 'none';
             }
 
             function advanceTime(hours) {
@@ -435,7 +739,10 @@
                     gameData.daysSurvived += 1;
                 }
                 
-                saveGameState();
+                // Update stats
+                updateStats(hours);
+                
+                // Update display
                 updateGameStats();
             }
 
@@ -498,6 +805,12 @@
             }
 
             function navigateToArea(area) {
+                // Check stamina
+                if (gameData.stats.stamina < 10) {
+                    showNothingFound('Not enough stamina to move (10 stamina required)');
+                    return;
+                }
+
                 // Use the stored area data
                 gameData.currentLocation = {
                     title: area.title,
@@ -505,6 +818,10 @@
                     imageUrl: area.imageUrl,
                     areaId: area.areaId
                 };
+                
+                // Consume stamina
+                gameData.stats.stamina -= 10;
+                
                 advanceTime(1); // Moving takes 1 hour
                 displayCurrentLocation();
                 saveGameState();
@@ -521,13 +838,97 @@
             }
 
             exploreButton.addEventListener('click', async () => {
+                // Check stamina
+                if (gameData.stats.stamina < 20) {
+                    showNothingFound('Not enough stamina to explore (20 stamina required)');
+                    return;
+                }
+
                 // 60% chance to find something
                 if (Math.random() < 0.6) {
                     await generateNewLocation();
                 } else {
                     showNothingFound('You explore the area but find nothing of interest...');
                 }
+                
+                // Consume stamina
+                gameData.stats.stamina -= 20;
+                
                 advanceTime(2); // Exploring takes 2 hours
+                updateStatsDisplay();
+            });
+
+            sleepButton.addEventListener('click', () => {
+                if (gameData.stats.stamina >= 100) {
+                    showNothingFound('Your stamina is already full');
+                    return;
+                }
+
+                showLoading('Sleeping', 'Resting to restore stamina...');
+                
+                // Restore random amount of stamina (20-30)
+                const staminaRestored = Math.floor(Math.random() * 11) + 20;
+                gameData.stats.stamina = Math.min(100, gameData.stats.stamina + staminaRestored);
+                
+                advanceTime(1); // Sleeping takes 1 hour
+                updateStatsDisplay();
+                
+                hideLoading();
+                showNothingFound(`You rested and restored ${staminaRestored} stamina`);
+            });
+
+            searchFoodButton.addEventListener('click', () => {
+                // Check stamina
+                if (gameData.stats.stamina < 10) {
+                    showNothingFound('Not enough stamina to search for food (10 stamina required)');
+                    return;
+                }
+
+                showLoading('Searching for Food', 'Looking for edible items in the area...');
+                
+                // Consume stamina
+                gameData.stats.stamina -= 10;
+                
+                // Random chance to find food (0-50)
+                const foodFound = Math.floor(Math.random() * 51);
+                gameData.stats.hunger = Math.min(100, gameData.stats.hunger + foodFound);
+                
+                advanceTime(1); // Searching takes 1 hour
+                updateStatsDisplay();
+                
+                hideLoading();
+                if (foodFound > 0) {
+                    showNothingFound(`You found some food and restored ${foodFound} hunger`);
+                } else {
+                    showNothingFound('You searched but found no food');
+                }
+            });
+
+            searchWaterButton.addEventListener('click', () => {
+                // Check stamina
+                if (gameData.stats.stamina < 10) {
+                    showNothingFound('Not enough stamina to search for water (10 stamina required)');
+                    return;
+                }
+
+                showLoading('Searching for Water', 'Looking for drinkable water in the area...');
+                
+                // Consume stamina
+                gameData.stats.stamina -= 10;
+                
+                // Random chance to find water (0-50)
+                const waterFound = Math.floor(Math.random() * 51);
+                gameData.stats.thirst = Math.min(100, gameData.stats.thirst + waterFound);
+                
+                advanceTime(1); // Searching takes 1 hour
+                updateStatsDisplay();
+                
+                hideLoading();
+                if (waterFound > 0) {
+                    showNothingFound(`You found some water and restored ${waterFound} thirst`);
+                } else {
+                    showNothingFound('You searched but found no water');
+                }
             });
 
             startButton.addEventListener('click', async () => {
@@ -549,7 +950,13 @@
                         nextAreaId: 1,
                         daysSurvived: 0,
                         currentTime: { hours: 8, minutes: 0 },
-                        maxLinkedAreas: new Map()
+                        maxLinkedAreas: new Map(),
+                        stats: {
+                            health: 100,
+                            hunger: 100,
+                            thirst: 100,
+                            stamina: 100
+                        }
                     };
                     
                     // Clear localStorage
@@ -578,8 +985,7 @@
                 }
                 
                 try {
-                    // Show loading state
-                    locationImage.style.opacity = '0.5';
+                    showLoading('Regenerating Background', 'Creating a new visual representation of your current location...');
                     
                     const imageResponse = await fetch('/api/generate-image', {
                         method: 'POST',
@@ -627,12 +1033,13 @@
 
                     // Update the display and save state
                     locationImage.src = imageUrl;
-                    locationImage.style.opacity = '1';
                     saveGameState();
+
+                    hideLoading();
 
                 } catch (error) {
                     console.error('Error regenerating image:', error);
-                    locationImage.style.opacity = '1';
+                    hideLoading();
                     alert(`Error: ${error.message}\nPlease try again.`);
                 }
             });
@@ -642,11 +1049,24 @@
                 locationsVisitedSpan.textContent = gameData.visitedLocations.size;
                 daysSurvivedSpan.textContent = gameData.daysSurvived;
                 currentTimeSpan.textContent = formatTime(gameData.currentTime.hours, gameData.currentTime.minutes);
+                updateStatsDisplay();
                 saveGameState();
+            }
+
+            function showLoading(message, description) {
+                loadingMessage.textContent = message;
+                loadingDescription.textContent = description;
+                loadingOverlay.style.display = 'flex';
+            }
+
+            function hideLoading() {
+                loadingOverlay.style.display = 'none';
             }
 
             async function generateInitialLocation() {
                 try {
+                    showLoading('Generating Initial Location', 'Creating your starting point in the post-apocalyptic world...');
+                    
                     // Call Ollama API to generate location description
                     const response = await fetch('/api/generate-location', {
                         method: 'POST',
@@ -665,6 +1085,9 @@
                     }
 
                     const locationData = await response.json();
+                    
+                    loadingMessage.textContent = 'Generating Location Image';
+                    loadingDescription.textContent = 'Creating a visual representation of your surroundings...';
                     
                     // Generate and display location image
                     const imageResponse = await fetch('/api/generate-image', {
@@ -724,8 +1147,11 @@
                     displayCurrentLocation();
                     saveGameState();
 
+                    hideLoading();
+
                 } catch (error) {
                     console.error('Error in generateInitialLocation:', error);
+                    hideLoading();
                     showNothingFound(`Error: ${error.message}`);
                     // Reset to start screen on error
                     startScreen.style.display = 'flex';
@@ -743,6 +1169,8 @@
                         showNothingFound('You have discovered all possible areas from this location.');
                         return;
                     }
+
+                    showLoading('Exploring Surroundings', 'Searching for new locations in the post-apocalyptic world...');
 
                     // Call Ollama API to generate location description
                     const response = await fetch('/api/generate-location', {
@@ -762,6 +1190,9 @@
                     }
 
                     const locationData = await response.json();
+                    
+                    loadingMessage.textContent = 'Generating Location Image';
+                    loadingDescription.textContent = 'Creating a visual representation of the new area...';
                     
                     // Generate and display location image
                     const imageResponse = await fetch('/api/generate-image', {
@@ -834,11 +1265,17 @@
                     displayDiscoveredAreas();
                     saveGameState();
 
+                    hideLoading();
+
                     // Show success message
                     showNothingFound(`Discovered new area: ${newArea.title}`);
 
+                    // Update explore button state
+                    updateExploreButtonState();
+
                 } catch (error) {
                     console.error('Error in generateNewLocation:', error);
+                    hideLoading();
                     showNothingFound(`Error: ${error.message}`);
                 }
             }
@@ -859,6 +1296,35 @@
                     exploreButton.title = `Explore surroundings (${currentConnections.length}/${currentMaxLinked} areas discovered)`;
                 }
             }
+
+            restartButton.addEventListener('click', () => {
+                // Reset game state
+                gameData = {
+                    currentLocation: null,
+                    visitedLocations: new Map(),
+                    discoveredAreas: new Map(),
+                    areaConnections: new Map(),
+                    linkPositions: new Map(),
+                    nextAreaId: 1,
+                    daysSurvived: 0,
+                    currentTime: { hours: 8, minutes: 0 },
+                    maxLinkedAreas: new Map(),
+                    stats: {
+                        health: 100,
+                        hunger: 100,
+                        thirst: 100,
+                        stamina: 100
+                    }
+                };
+                
+                // Hide game over screen and show start screen
+                gameOverScreen.style.display = 'none';
+                startScreen.style.display = 'flex';
+                gameState.style.display = 'none';
+                
+                // Reset stats display
+                updateStatsDisplay();
+            });
         });
     </script>
 </body>
