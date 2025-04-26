@@ -10,7 +10,8 @@ const port = process.env.PORT || 3000;
 // Configuration
 const config = {
     comfyuiUrl: process.env.COMFYUI_URL || 'http://host.docker.internal:8188',
-    apiEndpoint: '/api'
+    apiEndpoint: '/api',
+    ollamaUrl: process.env.OLLAMA_URL || 'http://host.docker.internal:11434'
 };
 
 // Configure multer for file uploads
@@ -91,7 +92,12 @@ app.post('/api/generate', express.json(), (req, res) => {
         return res.status(400).json({ error: 'Prompt is required' });
     }
 
-    const command = `node generate-image.js "${prompt}" "${negative || ''}" "${model || ''}" "${width || 832}" "${height || 1216}"`;
+    // Escape single quotes and wrap in single quotes to avoid shell interpretation issues
+    const escapedPrompt = prompt.replace(/'/g, "'\\''");
+    const escapedNegative = (negative || '').replace(/'/g, "'\\''");
+    const escapedModel = (model || '').replace(/'/g, "'\\''");
+    
+    const command = `node generate-image.js '${escapedPrompt}' '${escapedNegative}' '${escapedModel}' '${width || 832}' '${height || 1216}'`;
     console.log('Executing command:', command);
     
     exec(command, (error, stdout, stderr) => {
@@ -368,6 +374,74 @@ app.post('/api/remove-background', upload.single('image'), async (req, res) => {
     } catch (error) {
         console.error('Error processing image:', error.response?.data || error.message);
         res.status(500).json({ error: error.response?.data || error.message });
+    }
+});
+
+// Add Ollama route
+app.get('/ollama-test', async (req, res) => {
+    const models = await getAvailableOllamaModels();
+    res.render('ollama-test', { models });
+});
+
+// Add Ollama API endpoint
+app.post('/api/ollama', async (req, res) => {
+    try {
+        const { prompt, model, stream, role, conversation } = req.body;
+        
+        let messages = [];
+        if (conversation && conversation.length > 0) {
+            messages = conversation;
+        }
+        
+        messages.push({
+            role: role || "user",
+            content: prompt
+        });
+        
+        const response = await axios.post(`${config.ollamaUrl}/v1/chat/completions`, {
+            model,
+            messages,
+            stream: stream || false
+        });
+        
+        // Add the assistant's response to the conversation
+        const assistantResponse = {
+            role: "assistant",
+            content: response.data.choices[0].message.content
+        };
+        
+        res.json({
+            response: response.data,
+            conversation: [...messages, assistantResponse]
+        });
+    } catch (error) {
+        console.error('Ollama API error:', error.message);
+        if (error.response) {
+            console.error('Response data:', error.response.data);
+            console.error('Response status:', error.response.status);
+        }
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Add function to get available Ollama models
+async function getAvailableOllamaModels() {
+    try {
+        const response = await axios.get(`${config.ollamaUrl}/api/tags`);
+        return response.data.models.map(model => model.name);
+    } catch (error) {
+        console.error('Error fetching Ollama models:', error.message);
+        return [];
+    }
+}
+
+// Add Ollama models endpoint
+app.get('/api/ollama/models', async (req, res) => {
+    try {
+        const models = await getAvailableOllamaModels();
+        res.json({ models });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
     }
 });
 

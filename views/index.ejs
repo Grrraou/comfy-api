@@ -70,6 +70,9 @@
         .background-remover {
             border-top: 4px solid #FF9800;
         }
+        .ollama-api {
+            border-top: 4px solid #9C27B0;
+        }
         .button {
             display: inline-block;
             padding: 0.8rem 1.5rem;
@@ -87,6 +90,9 @@
         }
         .background-remover .button {
             background-color: #FF9800;
+        }
+        .ollama-api .button {
+            background-color: #9C27B0;
         }
         .button:hover {
             opacity: 0.9;
@@ -114,6 +120,12 @@
                 <h2>Remove Background</h2>
                 <p>Upload an image and remove its background automatically using AI.</p>
                 <span class="button">Remove Background</span>
+            </a>
+            <a href="/ollama-test" class="option-card ollama-api">
+                <div class="icon">🤖</div>
+                <h2>Ollama API</h2>
+                <p>Test and interact with the Ollama API using different models and prompts.</p>
+                <span class="button">Test API</span>
             </a>
         </div>
     </div>

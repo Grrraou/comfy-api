@@ -6,6 +6,7 @@ services:
     image: comfyui-test
     environment:
       - COMFYUI_API=http://host.docker.internal:8188/api
+      - OLLAMA_URL=http://host.docker.internal:11434
     restart: "no"
     extra_hosts:
       - "host.docker.internal:host-gateway"
