@@ -12,6 +12,7 @@ services:
       - "host.docker.internal:host-gateway"
     volumes:
       - ./public/images:/app/public/images
+      - ./public/survival:/app/public/survival
       - ./config:/app/config
 
 volumes:

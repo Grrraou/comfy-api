@@ -1,5 +1,6 @@
 # Generated images
 public/images/*.png
+public/survival/*.png
 
 # Node.js
 node_modules/

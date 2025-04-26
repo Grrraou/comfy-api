@@ -286,6 +286,10 @@
                 <span class="stat-label">Days Survived:</span>
                 <span id="daysSurvived">0</span>
             </div>
+            <div class="stat-item">
+                <span class="stat-label">Current Time:</span>
+                <span id="currentTime">-</span>
+            </div>
         </div>
     </div>
 
@@ -321,6 +325,7 @@
             const currentLocationSpan = document.getElementById('currentLocation');
             const locationsVisitedSpan = document.getElementById('locationsVisited');
             const daysSurvivedSpan = document.getElementById('daysSurvived');
+            const currentTimeSpan = document.getElementById('currentTime');
 
             // Load game state from localStorage
             let gameData = loadGameState();
@@ -350,7 +355,8 @@
                             areaConnections,
                             linkPositions,
                             nextAreaId: parsed.nextAreaId || 1,
-                            daysSurvived: parsed.daysSurvived || 0
+                            daysSurvived: parsed.daysSurvived || 0,
+                            currentTime: parsed.currentTime || { hours: 8, minutes: 0 }
                         };
                     }
                 } catch (error) {
@@ -365,7 +371,8 @@
                     areaConnections: new Map(),
                     linkPositions: new Map(),
                     nextAreaId: 1,
-                    daysSurvived: 0
+                    daysSurvived: 0,
+                    currentTime: { hours: 8, minutes: 0 }
                 };
             }
 
@@ -393,7 +400,8 @@
                         areaConnections: areaConnectionsObj,
                         linkPositions: linkPositionsObj,
                         nextAreaId: gameData.nextAreaId,
-                        daysSurvived: gameData.daysSurvived
+                        daysSurvived: gameData.daysSurvived,
+                        currentTime: gameData.currentTime
                     };
 
                     // Save to localStorage
@@ -401,6 +409,31 @@
                 } catch (error) {
                     console.error('Error saving game state:', error);
                 }
+            }
+
+            function formatTime(hours, minutes) {
+                const ampm = hours >= 12 ? 'PM' : 'AM';
+                const displayHours = hours % 12 || 12;
+                return `${displayHours}:${minutes.toString().padStart(2, '0')} ${ampm}`;
+            }
+
+            function advanceTime(hours) {
+                gameData.currentTime.minutes += hours * 60;
+                
+                // Handle hour overflow
+                while (gameData.currentTime.minutes >= 60) {
+                    gameData.currentTime.hours += 1;
+                    gameData.currentTime.minutes -= 60;
+                }
+                
+                // Handle day transition
+                while (gameData.currentTime.hours >= 24) {
+                    gameData.currentTime.hours -= 24;
+                    gameData.daysSurvived += 1;
+                }
+                
+                saveGameState();
+                updateGameStats();
             }
 
             function displayCurrentLocation() {
@@ -468,6 +501,7 @@
                     imageUrl: area.imageUrl,
                     areaId: area.areaId
                 };
+                advanceTime(1); // Moving takes 1 hour
                 displayCurrentLocation();
                 saveGameState();
             }
@@ -489,12 +523,14 @@
                 } else {
                     showNothingFound('You explore the area but find nothing of interest...');
                 }
+                advanceTime(2); // Exploring takes 2 hours
             });
 
             startButton.addEventListener('click', async () => {
                 startScreen.style.display = 'none';
                 gameState.style.display = 'block';
                 await generateInitialLocation();
+                advanceTime(1); // Starting the game takes 1 hour
             });
 
             resetButton.addEventListener('click', async () => {
@@ -507,7 +543,8 @@
                         areaConnections: new Map(),
                         linkPositions: new Map(),
                         nextAreaId: 1,
-                        daysSurvived: 0
+                        daysSurvived: 0,
+                        currentTime: { hours: 8, minutes: 0 }
                     };
                     
                     // Clear localStorage
@@ -599,6 +636,7 @@
                 currentLocationSpan.textContent = gameData.currentLocation?.title || '-';
                 locationsVisitedSpan.textContent = gameData.visitedLocations.size;
                 daysSurvivedSpan.textContent = gameData.daysSurvived;
+                currentTimeSpan.textContent = formatTime(gameData.currentTime.hours, gameData.currentTime.minutes);
                 saveGameState();
             }
 

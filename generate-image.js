@@ -13,6 +13,14 @@ const config = {
     survivalDir: path.join(__dirname, 'public', 'survival')
 };
 
+// Ensure directories exist
+[config.outputDir, config.survivalDir].forEach(dir => {
+    if (!fs.existsSync(dir)) {
+        fs.mkdirSync(dir, { recursive: true });
+        console.error(`Created directory: ${dir}`);
+    }
+});
+
 async function getAvailableModels() {
     try {
         const apiUrl = `${config.comfyuiUrl}${config.apiEndpoint}`;
