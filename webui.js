@@ -614,18 +614,18 @@ app.post('/api/ollama', async (req, res) => {
                 "name": "string",
                 "description": "string",
                 "attributes": {
-                    "gender": "string",
-                    "age": "string",
-                    "bodyType": "string",
+                    "gender": "string", (Male or Female)
+                    "age": "string", (young, middle-aged, or elderly)
+                    "bodyType": "string", (slim, athletic, curvy, muscular, average)
                     "eyeColor": "string",
                     "hairColor": "string",
                     "ethnicity": "string",
-                    "clothing": "string"
+                    "clothing": "string",
                 },
                 "background": "string",
                 "additionalDetails": "string"
             }
-            Do not include any text outside the JSON object. Do not include markdown formatting. The response must be parseable as JSON.`;
+            Do not include any text outside the JSON object. Do not include markdown formatting. The response must be parseable as JSON.[VERY IMPORTANT ONLY RESPOND IN JSON RESPECTING THE STRUCTURE ABOVE]`;
         } else if (role === "sd-prompt") {
             systemMessage = "You are a Stable Diffusion prompt generator. Convert descriptions into optimized keyword-based prompts. Use parentheses for emphasis, commas for separation, and avoid long sentences. Focus on key visual elements and artistic styles. Example format: (detailed face), (asian female), (warrior armor), (dynamic pose), (epic lighting), (digital art), (highly detailed), (sharp focus).";
         }

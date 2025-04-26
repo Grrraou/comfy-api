@@ -83,10 +83,10 @@
                     <div class="mb-3">
                         <label class="form-label">Role Presets</label>
                         <div class="role-presets">
-                            <div class="role-preset" data-role="sd-prompt" data-prompt="You are a Stable Diffusion prompt generator. Convert descriptions into optimized keyword-based prompts. Use parentheses for emphasis, commas for separation, and avoid long sentences. Focus on key visual elements and artistic styles. Example format: (detailed face), (asian female), (warrior armor), (dynamic pose), (epic lighting), (digital art), (highly detailed), (sharp focus).">SD Prompt Generator</div>
-                            <div class="role-preset" data-role="char-generator" data-prompt="You are a character generator that creates detailed character profiles in JSON format. For any character description, generate a JSON object with: name, physical traits (age, height, build, distinguishing features), and attributes (strength, intelligence, agility, charisma, each 1-10). Example format: { 'name': 'Yong Lua', 'physical': { 'age': 28, 'height': '5\'6\"', 'build': 'athletic', 'features': ['scar on left cheek', 'golden eyes'] }, 'attributes': { 'strength': 8, 'intelligence': 6, 'agility': 9, 'charisma': 7 } }. Always respond with valid JSON only.">Character Generator</div>
-                            <div class="role-preset" data-role="narrator" data-prompt="You are a narrator that provides brief, concise descriptions based on the given context. Keep your responses short and focused on key details. Use vivid language and maintain a consistent narrative style.">Narrator</div>
-                            <div class="role-preset" data-role="custom" data-prompt="">Custom Role</div>
+                            <div class="role-preset" data-role="sd-prompt">SD Prompt Generator</div>
+                            <div class="role-preset" data-role="char-generator">Character Generator</div>
+                            <div class="role-preset" data-role="narrator">Narrator</div>
+                            <div class="role-preset" data-role="custom">Custom Role</div>
                         </div>
                         <div id="customRoleInput" class="custom-role-input">
                             <label for="customRolePrompt" class="form-label">Custom Role Prompt</label>
@@ -130,7 +130,16 @@
     <script>
         let conversationHistory = [];
         let currentRole = 'sd-prompt';
-        let currentRolePrompt = 'You are a Stable Diffusion prompt generator. Convert descriptions into optimized keyword-based prompts. Use parentheses for emphasis, commas for separation, and avoid long sentences. Focus on key visual elements and artistic styles. Example format: (detailed face), (asian female), (warrior armor), (dynamic pose), (epic lighting), (digital art), (highly detailed), (sharp focus).';
+        
+        // Role prompts configuration
+        const rolePrompts = {
+            'sd-prompt': 'You are a Stable Diffusion prompt generator. Convert descriptions into optimized keyword-based prompts. Use parentheses for emphasis, commas for separation, and avoid long sentences. Focus on key visual elements and artistic styles. Example format: (detailed face), (asian female), (warrior armor), (dynamic pose), (epic lighting), (digital art), (highly detailed), (sharp focus).',
+            'char-generator': 'You are a character builder that ALWAYS responds in valid JSON format even if prompt is not a character description. Your response must be a valid JSON object with the following structure: { "name": "string", "description": "string", "attributes": { "gender": "string", (Male or Female) "age": "string", (young, middle-aged, or elderly) "bodyType": "string", (slim, athletic, curvy, muscular, average) "eyeColor": "string", "hairColor": "string", "ethnicity": "string", "clothing": "string" }, "background": "string", "additionalDetails": "string" } Do not include any text outside the JSON object. Do not include markdown formatting. The response must be parseable as JSON.[VERY IMPORTANT ONLY RESPOND IN JSON RESPECTING THE STRUCTURE ABOVE]',
+            'narrator': 'You are a narrator that provides brief, concise descriptions based on the given context. Keep your responses short and focused on key details. Use vivid language and maintain a consistent narrative style.',
+            'custom': ''
+        };
+        
+        let currentRolePrompt = rolePrompts[currentRole];
 
         // Handle role preset selection
         document.querySelectorAll('.role-preset').forEach(preset => {
@@ -147,7 +156,7 @@
                     currentRolePrompt = document.getElementById('customRolePrompt').value;
                 } else {
                     document.getElementById('customRoleInput').classList.remove('show');
-                    currentRolePrompt = preset.dataset.prompt;
+                    currentRolePrompt = rolePrompts[currentRole];
                 }
             });
         });
