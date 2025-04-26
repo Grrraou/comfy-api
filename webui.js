@@ -99,6 +99,30 @@ app.get('/', async (req, res) => {
     });
 });
 
+// Free Prompt page
+app.get('/free-prompt', async (req, res) => {
+    const models = await getAvailableModels();
+    res.render('free-prompt', { 
+        title: 'Free Prompt - ComfyUI Image Generator',
+        imagePath: null,
+        error: null,
+        models: models,
+        formData: { prompt: '', negative: '', model: '', width: 832, height: 1216 }
+    });
+});
+
+// Prompt Builder page
+app.get('/prompt-builder', async (req, res) => {
+    const models = await getAvailableModels();
+    res.render('prompt-builder', { 
+        title: 'Character Builder - ComfyUI Image Generator',
+        imagePath: null,
+        error: null,
+        models: models,
+        formData: { negative: '', model: '', width: 832, height: 1216 }
+    });
+});
+
 // Generate image endpoint (legacy, redirects to API)
 app.post('/generate', (req, res) => {
     res.redirect('/');

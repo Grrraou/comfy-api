@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prompt Builder - <%= title %></title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            height: 100vh;
+            background-color: #f5f5f5;
+        }
+        .sidebar {
+            width: 300px;
+            background-color: white;
+            padding: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            overflow-y: auto;
+        }
+        .main-content {
+            flex: 1;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background-color: #f5f5f5;
+        }
+        h1 {
+            color: #333;
+            margin-top: 0;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #555;
+        }
+        input[type="text"], textarea, select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        textarea {
+            height: 100px;
+            resize: vertical;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            width: 100%;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+        .error {
+            color: red;
+            margin-top: 10px;
+        }
+        .image-container {
+            max-width: 100%;
+            max-height: calc(100vh - 40px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .image-container img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+            border-radius: 4px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .loading {
+            text-align: center;
+            margin-top: 20px;
+            display: none;
+        }
+        .character-section {
+            border: 1px solid #ddd;
+            padding: 10px;
+            margin-bottom: 15px;
+            border-radius: 4px;
+        }
+        .character-section h3 {
+            margin-top: 0;
+            color: #333;
+        }
+        .trait-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        .trait-group select {
+            flex: 1;
+        }
+        .trait-group button {
+            width: auto;
+            padding: 8px 12px;
+            background-color: #666;
+        }
+        .custom-input {
+            display: none;
+            margin-top: 10px;
+        }
+        .custom-input.active {
+            display: block;
+        }
+        .prompt-preview {
+            background-color: #f8f8f8;
+            padding: 10px;
+            border-radius: 4px;
+            margin-top: 10px;
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <h1>Character Builder</h1>
+        
+        <form id="generateForm">
+            <div class="form-group">
+                <label for="background">Background:</label>
+                <select id="background" name="background">
+                    <option value="">Select background</option>
+                    <option value="forest">Forest</option>
+                    <option value="cave">Cave</option>
+                    <option value="castle">Castle</option>
+                </select>
+            </div>
+
+            <div class="character-section">
+                <h3>Character Details</h3>
+                
+                <div class="form-group">
+                    <label for="gender">Gender:</label>
+                    <select id="gender" name="gender">
+                        <option value="">Select gender</option>
+                        <option value="male">Male</option>
+                        <option value="female">Female</option>
+                        <option value="non-binary">Non-binary</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Eyes:</label>
+                    <div class="trait-group">
+                        <select id="eyes" name="eyes">
+                            <option value="">Select eye color</option>
+                            <option value="blue">Blue</option>
+                            <option value="green">Green</option>
+                            <option value="black">Black</option>
+                        </select>
+                        <button type="button" class="custom-input-btn" data-trait="eyes">Custom</button>
+                    </div>
+                    <div class="custom-input" id="eyes-custom">
+                        <input type="text" id="eyes-custom-input" placeholder="Enter custom eye description">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Hair:</label>
+                    <div class="trait-group">
+                        <select id="hair" name="hair">
+                            <option value="">Select hair color</option>
+                            <option value="blond">Blond</option>
+                            <option value="black">Black</option>
+                            <option value="ginger">Ginger</option>
+                        </select>
+                        <button type="button" class="custom-input-btn" data-trait="hair">Custom</button>
+                    </div>
+                    <div class="custom-input" id="hair-custom">
+                        <input type="text" id="hair-custom-input" placeholder="Enter custom hair description">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Ethnicity:</label>
+                    <div class="trait-group">
+                        <select id="ethny" name="ethny">
+                            <option value="">Select ethnicity</option>
+                            <option value="caucasian">Caucasian</option>
+                            <option value="asian">Asian</option>
+                            <option value="latino">Latino</option>
+                        </select>
+                        <button type="button" class="custom-input-btn" data-trait="ethny">Custom</button>
+                    </div>
+                    <div class="custom-input" id="ethny-custom">
+                        <input type="text" id="ethny-custom-input" placeholder="Enter custom ethnicity description">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Age:</label>
+                    <div class="trait-group">
+                        <select id="age" name="age">
+                            <option value="">Select age</option>
+                            <option value="young">Young</option>
+                            <option value="middle-aged">Middle-aged</option>
+                            <option value="elderly">Elderly</option>
+                        </select>
+                        <button type="button" class="custom-input-btn" data-trait="age">Custom</button>
+                    </div>
+                    <div class="custom-input" id="age-custom">
+                        <input type="text" id="age-custom-input" placeholder="Enter custom age description">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Body Type:</label>
+                    <div class="trait-group">
+                        <select id="body" name="body">
+                            <option value="">Select body type</option>
+                            <option value="slim">Slim</option>
+                            <option value="athletic">Athletic</option>
+                            <option value="muscular">Muscular</option>
+                            <option value="curvy">Curvy</option>
+                            <option value="average">Average</option>
+                        </select>
+                        <button type="button" class="custom-input-btn" data-trait="body">Custom</button>
+                    </div>
+                    <div class="custom-input" id="body-custom">
+                        <input type="text" id="body-custom-input" placeholder="Enter custom body description">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Clothing:</label>
+                    <div class="trait-group">
+                        <select id="clothing" name="clothing">
+                            <option value="">Select clothing</option>
+                            <option value="casual">Casual</option>
+                            <option value="formal">Formal</option>
+                            <option value="fantasy">Fantasy</option>
+                            <option value="medieval">Medieval</option>
+                            <option value="modern">Modern</option>
+                            <option value="sporty">Sporty</option>
+                            <option value="business">Business</option>
+                            <option value="traditional">Traditional</option>
+                        </select>
+                        <button type="button" class="custom-input-btn" data-trait="clothing">Custom</button>
+                    </div>
+                    <div class="custom-input" id="clothing-custom">
+                        <input type="text" id="clothing-custom-input" placeholder="Enter custom clothing description">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="additionalDetails">Additional Details:</label>
+                    <textarea id="additionalDetails" name="additionalDetails" placeholder="Add any additional details about the character (e.g., accessories, pose, expression, etc.)"></textarea>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="negative">Negative Prompt:</label>
+                <textarea id="negative" name="negative"><%= formData.negative %></textarea>
+            </div>
+
+            <div class="form-group">
+                <label for="model">Model:</label>
+                <select id="model" name="model">
+                    <option value="">Select a model</option>
+                    <% if (models && models.length > 0) { %>
+                        <% models.forEach(function(model) { %>
+                            <option value="<%= model %>" <%= formData.model === model ? 'selected' : '' %>><%= model %></option>
+                        <% }); %>
+                    <% } %>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="width">Width:</label>
+                <input type="number" id="width" name="width" value="<%= formData.width || 832 %>" min="64" max="2048" step="64">
+            </div>
+
+            <div class="form-group">
+                <label for="height">Height:</label>
+                <input type="number" id="height" name="height" value="<%= formData.height || 1216 %>" min="64" max="2048" step="64">
+            </div>
+
+            <div class="form-group">
+                <button type="button" id="swapDimensions" style="background-color: #666;">↔️ Swap Dimensions</button>
+            </div>
+
+            <div class="form-group">
+                <label>Generated Prompt:</label>
+                <div class="prompt-preview" id="promptPreview"></div>
+            </div>
+            
+            <button type="submit" id="generateButton">Generate Image</button>
+        </form>
+
+        <div class="loading" id="loading">
+            Generating image... This may take a few minutes.
+        </div>
+
+        <div class="error" id="error" style="display: none;"></div>
+    </div>
+
+    <div class="main-content">
+        <div class="image-container" id="imageContainer" style="display: none;">
+            <img id="generatedImage" src="" alt="Generated Image">
+        </div>
+    </div>
+
+    <script>
+        let isGenerating = false;
+        let currentFormData = null;
+
+        // Handle custom input buttons
+        document.querySelectorAll('.custom-input-btn').forEach(button => {
+            button.addEventListener('click', function() {
+                const trait = this.dataset.trait;
+                const customInput = document.getElementById(`${trait}-custom`);
+                const select = document.getElementById(trait);
+                const customInputField = document.getElementById(`${trait}-custom-input`);
+                
+                if (customInput.classList.contains('active')) {
+                    customInput.classList.remove('active');
+                    select.disabled = false;
+                    customInputField.value = '';
+                } else {
+                    customInput.classList.add('active');
+                    select.disabled = true;
+                    select.value = '';
+                }
+                updatePromptPreview();
+            });
+        });
+
+        // Update prompt preview
+        function updatePromptPreview() {
+            const background = document.getElementById('background').value;
+            const gender = document.getElementById('gender').value;
+            const eyes = document.getElementById('eyes-custom').classList.contains('active') 
+                ? document.getElementById('eyes-custom-input').value 
+                : document.getElementById('eyes').value;
+            const hair = document.getElementById('hair-custom').classList.contains('active')
+                ? document.getElementById('hair-custom-input').value
+                : document.getElementById('hair').value;
+            const ethny = document.getElementById('ethny-custom').classList.contains('active')
+                ? document.getElementById('ethny-custom-input').value
+                : document.getElementById('ethny').value;
+            const age = document.getElementById('age-custom').classList.contains('active')
+                ? document.getElementById('age-custom-input').value
+                : document.getElementById('age').value;
+            const body = document.getElementById('body-custom').classList.contains('active')
+                ? document.getElementById('body-custom-input').value
+                : document.getElementById('body').value;
+            const clothing = document.getElementById('clothing-custom').classList.contains('active')
+                ? document.getElementById('clothing-custom-input').value
+                : document.getElementById('clothing').value;
+            const additionalDetails = document.getElementById('additionalDetails').value;
+            
+            let prompt = '';
+            
+            if (background) {
+                prompt += `A ${background} background, `;
+            }
+            
+            if (gender || eyes || hair || ethny || age || body || clothing) {
+                prompt += `a ${age || ''} ${gender || ''} character with `;
+                if (body) prompt += `${body} body, `;
+                if (eyes) prompt += `${eyes} eyes, `;
+                if (hair) prompt += `${hair} hair, `;
+                if (ethny) prompt += `${ethny} ethnicity, `;
+                if (clothing) prompt += `wearing ${clothing} clothing, `;
+                prompt = prompt.slice(0, -2) + '.';
+            }
+            
+            if (additionalDetails) {
+                prompt += ' ' + additionalDetails;
+            }
+            
+            document.getElementById('promptPreview').textContent = prompt.trim();
+        }
+
+        // Add event listeners for all select elements and custom inputs
+        document.addEventListener('change', function(e) {
+            if (e.target.tagName === 'SELECT' || e.target.tagName === 'INPUT') {
+                updatePromptPreview();
+            }
+        });
+
+        // Swap dimensions functionality
+        document.getElementById('swapDimensions').addEventListener('click', function() {
+            const widthInput = document.getElementById('width');
+            const heightInput = document.getElementById('height');
+            const temp = widthInput.value;
+            widthInput.value = heightInput.value;
+            heightInput.value = temp;
+            saveFormData();
+        });
+
+        // Load saved form data from localStorage
+        function loadFormData() {
+            const savedData = localStorage.getItem('comfyuiFormData');
+            if (savedData) {
+                const data = JSON.parse(savedData);
+                document.getElementById('background').value = data.background || '';
+                document.getElementById('gender').value = data.gender || '';
+                document.getElementById('eyes').value = data.eyes || '';
+                document.getElementById('hair').value = data.hair || '';
+                document.getElementById('ethny').value = data.ethny || '';
+                document.getElementById('age').value = data.age || '';
+                document.getElementById('body').value = data.body || '';
+                document.getElementById('clothing').value = data.clothing || '';
+                document.getElementById('eyes-custom-input').value = data.eyesCustom || '';
+                document.getElementById('hair-custom-input').value = data.hairCustom || '';
+                document.getElementById('ethny-custom-input').value = data.ethnyCustom || '';
+                document.getElementById('age-custom-input').value = data.ageCustom || '';
+                document.getElementById('body-custom-input').value = data.bodyCustom || '';
+                document.getElementById('clothing-custom-input').value = data.clothingCustom || '';
+                document.getElementById('additionalDetails').value = data.additionalDetails || '';
+                document.getElementById('negative').value = data.negative || '';
+                document.getElementById('model').value = data.model || '';
+                document.getElementById('width').value = data.width || 832;
+                document.getElementById('height').value = data.height || 1216;
+
+                // Show custom inputs if they have values
+                if (data.eyesCustom) {
+                    document.getElementById('eyes-custom').classList.add('active');
+                    document.getElementById('eyes').disabled = true;
+                }
+                if (data.hairCustom) {
+                    document.getElementById('hair-custom').classList.add('active');
+                    document.getElementById('hair').disabled = true;
+                }
+                if (data.ethnyCustom) {
+                    document.getElementById('ethny-custom').classList.add('active');
+                    document.getElementById('ethny').disabled = true;
+                }
+                if (data.ageCustom) {
+                    document.getElementById('age-custom').classList.add('active');
+                    document.getElementById('age').disabled = true;
+                }
+                if (data.bodyCustom) {
+                    document.getElementById('body-custom').classList.add('active');
+                    document.getElementById('body').disabled = true;
+                }
+                if (data.clothingCustom) {
+                    document.getElementById('clothing-custom').classList.add('active');
+                    document.getElementById('clothing').disabled = true;
+                }
+
+                updatePromptPreview();
+            }
+        }
+
+        // Save form data to localStorage
+        function saveFormData() {
+            const formData = {
+                background: document.getElementById('background').value,
+                gender: document.getElementById('gender').value,
+                eyes: document.getElementById('eyes').value,
+                hair: document.getElementById('hair').value,
+                ethny: document.getElementById('ethny').value,
+                age: document.getElementById('age').value,
+                body: document.getElementById('body').value,
+                clothing: document.getElementById('clothing').value,
+                eyesCustom: document.getElementById('eyes-custom-input').value,
+                hairCustom: document.getElementById('hair-custom-input').value,
+                ethnyCustom: document.getElementById('ethny-custom-input').value,
+                ageCustom: document.getElementById('age-custom-input').value,
+                bodyCustom: document.getElementById('body-custom-input').value,
+                clothingCustom: document.getElementById('clothing-custom-input').value,
+                additionalDetails: document.getElementById('additionalDetails').value,
+                negative: document.getElementById('negative').value,
+                model: document.getElementById('model').value,
+                width: document.getElementById('width').value,
+                height: document.getElementById('height').value
+            };
+            localStorage.setItem('comfyuiFormData', JSON.stringify(formData));
+        }
+
+        // Load saved data when page loads
+        document.addEventListener('DOMContentLoaded', loadFormData);
+
+        // Save form data when any input changes
+        document.querySelectorAll('#generateForm input, #generateForm textarea, #generateForm select').forEach(element => {
+            element.addEventListener('change', saveFormData);
+            element.addEventListener('input', saveFormData);
+        });
+
+        document.getElementById('generateForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            if (isGenerating) {
+                return;
+            }
+
+            const loading = document.getElementById('loading');
+            const error = document.getElementById('error');
+            const imageContainer = document.getElementById('imageContainer');
+            const generatedImage = document.getElementById('generatedImage');
+            const generateButton = document.getElementById('generateButton');
+            
+            loading.style.display = 'block';
+            error.style.display = 'none';
+            imageContainer.style.display = 'none';
+            generateButton.disabled = true;
+            isGenerating = true;
+            
+            currentFormData = {
+                prompt: document.getElementById('promptPreview').textContent,
+                negative: document.getElementById('negative').value,
+                model: document.getElementById('model').value,
+                width: document.getElementById('width').value,
+                height: document.getElementById('height').value
+            };
+            
+            fetch('/api/generate', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(currentFormData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                loading.style.display = 'none';
+                generateButton.disabled = false;
+                isGenerating = false;
+                
+                if (data.error) {
+                    let errorMessage = data.error;
+                    if (data.details) {
+                        errorMessage += '\nDetails: ' + data.details;
+                    }
+                    if (data.stderr) {
+                        errorMessage += '\nError output: ' + data.stderr;
+                    }
+                    error.textContent = errorMessage;
+                    error.style.display = 'block';
+                } else {
+                    // Add timestamp to force browser to reload the image
+                    generatedImage.src = data.imagePath + '?t=' + Date.now();
+                    imageContainer.style.display = 'block';
+                }
+            })
+            .catch(error => {
+                loading.style.display = 'none';
+                generateButton.disabled = false;
+                isGenerating = false;
+                error.textContent = 'Error: ' + error.message;
+                error.style.display = 'block';
+            });
+        });
+    </script>
+</body>
+</html> 
