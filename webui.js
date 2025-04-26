@@ -210,16 +210,16 @@ app.post('/api/generate', express.json(), async (req, res) => {
 // Add a new endpoint specifically for the survival game
 app.post('/api/generate-image', express.json(), async (req, res) => {
     try {
-        const { prompt, areaId } = req.body;
+        const { prompt, areaId, width, height } = req.body;
         
         if (!prompt) {
             return res.status(400).json({ error: 'Prompt is required' });
         }
 
-        // Use default values
+        // Use provided values or defaults
         const finalModel = config.defaultModel;
-        const finalWidth = config.defaultWidth;
-        const finalHeight = config.defaultHeight;
+        const finalWidth = width || config.defaultWidth;
+        const finalHeight = height || config.defaultHeight;
 
         // Escape single quotes and wrap in single quotes to avoid shell interpretation issues
         const escapedPrompt = prompt.replace(/'/g, "'\\''");
@@ -617,6 +617,12 @@ app.post('/api/ollama', async (req, res) => {
                 "name": "string",
                 "description": "string",
                 "attributes": {
+                    "STR": "number", (Strength - Physical power, 3-18)
+                    "DEX": "number", (Dexterity - Agility and reflexes, 3-18)
+                    "CON": "number", (Constitution - Endurance and health, 3-18)
+                    "INT": "number", (Intelligence - Reasoning and knowledge, 3-18)
+                    "WIS": "number", (Wisdom - Perception and insight, 3-18)
+                    "CHA": "number", (Charisma - Personality and leadership, 3-18)
                     "gender": "string", (Male or Female)
                     "age": "string", (young, middle-aged, or elderly)
                     "bodyType": "string", (slim, athletic, curvy, muscular, average)
@@ -626,7 +632,7 @@ app.post('/api/ollama', async (req, res) => {
                     "clothing": "string",
                     "personality": "string",
                     "height": "string",
-                    "weight": "string",
+                    "weight": "string"
                 },
                 "background": "string",
                 "additionalDetails": "string"

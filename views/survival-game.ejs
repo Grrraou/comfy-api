@@ -251,6 +251,7 @@
             width: 100%;
             height: 100%;
             object-fit: cover;
+            object-position: top;
             transition: transform 0.3s ease;
         }
 
@@ -542,6 +543,7 @@
             width: 100%;
             height: 100%;
             object-fit: cover;
+            object-position: top;
             transition: transform 0.3s ease;
         }
 
@@ -630,12 +632,14 @@
             padding: 2rem;
             border-radius: 8px;
             border: 2px solid #ff6b6b;
-            max-width: 600px;
-            width: 90%;
+            width: 95vw;
+            max-width: 95vw;
             max-height: 90vh;
             overflow-y: auto;
             position: relative;
             color: #ffffff;
+            display: flex;
+            gap: 2rem;
         }
 
         .npc-modal-close {
@@ -648,38 +652,46 @@
             font-size: 1.5rem;
             cursor: pointer;
             transition: color 0.3s ease;
+            z-index: 2;
         }
 
         .npc-modal-close:hover {
             color: #ff4444;
         }
 
-        .npc-modal-header {
-            display: flex;
-            align-items: center;
-            gap: 1.5rem;
-            margin-bottom: 1.5rem;
-            padding-bottom: 1rem;
-            border-bottom: 1px solid #3a3a3a;
+        .npc-modal-left {
+            flex: 1.5;
+            width: 50vw;
+            max-width: 50vw;
+        }
+
+        .npc-modal-right {
+            flex: 1;
+            width: 30vw;
+            max-width: 30vw;
         }
 
         .npc-modal-image {
-            width: 120px;
-            height: 120px;
-            border-radius: 50%;
+            width: 100%;
+            aspect-ratio: 9/16;
+            border-radius: 8px;
             overflow: hidden;
             border: 2px solid #ff6b6b;
-            flex-shrink: 0;
+            margin-bottom: 1rem;
+            background-color: #2a2a2a;
         }
 
         .npc-modal-image img {
             width: 100%;
             height: 100%;
             object-fit: cover;
+            object-position: top;
         }
 
-        .npc-modal-info {
-            flex: 1;
+        .npc-modal-header {
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid #3a3a3a;
         }
 
         .npc-modal-name {
@@ -723,6 +735,21 @@
             font-size: 1.1rem;
         }
 
+        .npc-modal-attribute-bar {
+            width: 100%;
+            height: 8px;
+            background-color: #1a1a1a;
+            border-radius: 4px;
+            margin-top: 0.5rem;
+            overflow: hidden;
+        }
+
+        .npc-modal-attribute-fill {
+            height: 100%;
+            background-color: #ff6b6b;
+            transition: width 0.3s ease;
+        }
+
         .npc-modal-background {
             color: #cccccc;
             margin: 1.5rem 0;
@@ -737,6 +764,33 @@
             padding-top: 1.5rem;
             border-top: 1px solid #3a3a3a;
             line-height: 1.6;
+        }
+
+        @media (max-width: 768px) {
+            .npc-modal-content {
+                flex-direction: column;
+                padding: 1.5rem;
+            }
+            
+            .npc-modal-left {
+                width: 100%;
+                max-width: 100%;
+            }
+            
+            .npc-modal-right {
+                width: 100%;
+                max-width: 100%;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .npc-modal-content {
+                padding: 1rem;
+            }
+            
+            .npc-modal-image {
+                aspect-ratio: 3/4;
+            }
         }
 
         .location-container {
@@ -862,6 +916,24 @@
             bottom: 80px;
             right: 20px;
         }
+
+        .npc-modal-section {
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid #3a3a3a;
+        }
+
+        .npc-modal-section:last-child {
+            border-bottom: none;
+        }
+
+        .npc-modal-section-title {
+            color: #ff6b6b;
+            font-size: 1.2rem;
+            margin-bottom: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
     </style>
 </head>
 <body>
@@ -951,18 +1023,20 @@
         <div id="npcModal" class="npc-modal">
             <div class="npc-modal-content">
                 <button class="npc-modal-close">&times;</button>
-                <div class="npc-modal-header">
+                <div class="npc-modal-left">
                     <div class="npc-modal-image">
                         <img src="" alt="NPC">
                     </div>
-                    <div class="npc-modal-info">
+                </div>
+                <div class="npc-modal-right">
+                    <div class="npc-modal-header">
                         <h3 class="npc-modal-name"></h3>
                         <p class="npc-modal-description"></p>
                     </div>
+                    <div class="npc-modal-attributes"></div>
+                    <div class="npc-modal-background"></div>
+                    <div class="npc-modal-additional"></div>
                 </div>
-                <div class="npc-modal-attributes"></div>
-                <div class="npc-modal-background"></div>
-                <div class="npc-modal-additional"></div>
             </div>
         </div>
 
@@ -1169,16 +1243,69 @@
             // Clear previous attributes
             modalAttributes.innerHTML = '';
 
-            // Add attributes
-            Object.entries(npc.data.attributes).forEach(([key, value]) => {
+            // Add D&D-style attributes
+            const dndAttributes = [
+                { key: 'STR', label: 'Strength', value: npc.data.attributes.STR || 10 },
+                { key: 'DEX', label: 'Dexterity', value: npc.data.attributes.DEX || 10 },
+                { key: 'CON', label: 'Constitution', value: npc.data.attributes.CON || 10 },
+                { key: 'INT', label: 'Intelligence', value: npc.data.attributes.INT || 10 },
+                { key: 'WIS', label: 'Wisdom', value: npc.data.attributes.WIS || 10 },
+                { key: 'CHA', label: 'Charisma', value: npc.data.attributes.CHA || 10 }
+            ];
+
+            // Add character attributes
+            const characterAttributes = [
+                { key: 'gender', label: 'Gender', value: npc.data.attributes.gender },
+                { key: 'age', label: 'Age', value: npc.data.attributes.age },
+                { key: 'bodyType', label: 'Body Type', value: npc.data.attributes.bodyType },
+                { key: 'eyeColor', label: 'Eye Color', value: npc.data.attributes.eyeColor },
+                { key: 'hairColor', label: 'Hair Color', value: npc.data.attributes.hairColor },
+                { key: 'ethnicity', label: 'Ethnicity', value: npc.data.attributes.ethnicity },
+                { key: 'clothing', label: 'Clothing', value: npc.data.attributes.clothing },
+                { key: 'personality', label: 'Personality', value: npc.data.attributes.personality },
+                { key: 'height', label: 'Height', value: npc.data.attributes.height },
+                { key: 'weight', label: 'Weight', value: npc.data.attributes.weight }
+            ];
+
+            // Create D&D attributes section
+            const dndSection = document.createElement('div');
+            dndSection.className = 'npc-modal-section';
+            dndSection.innerHTML = '<h4 class="npc-modal-section-title">Attributes</h4>';
+            
+            dndAttributes.forEach(attr => {
                 const attributeDiv = document.createElement('div');
                 attributeDiv.className = 'npc-modal-attribute';
+                const percentage = (attr.value / 20) * 100;
                 attributeDiv.innerHTML = `
-                    <div class="npc-modal-attribute-label">${key}</div>
-                    <div class="npc-modal-attribute-value">${value}</div>
+                    <div class="npc-modal-attribute-label">${attr.label} (${attr.key})</div>
+                    <div class="npc-modal-attribute-value">${attr.value}</div>
+                    <div class="npc-modal-attribute-bar">
+                        <div class="npc-modal-attribute-fill" style="width: ${percentage}%"></div>
+                    </div>
                 `;
-                modalAttributes.appendChild(attributeDiv);
+                dndSection.appendChild(attributeDiv);
             });
+
+            // Create character attributes section
+            const charSection = document.createElement('div');
+            charSection.className = 'npc-modal-section';
+            charSection.innerHTML = '<h4 class="npc-modal-section-title">Physical Characteristics</h4>';
+            
+            characterAttributes.forEach(attr => {
+                if (attr.value) {
+                    const attributeDiv = document.createElement('div');
+                    attributeDiv.className = 'npc-modal-attribute';
+                    attributeDiv.innerHTML = `
+                        <div class="npc-modal-attribute-label">${attr.label}</div>
+                        <div class="npc-modal-attribute-value">${attr.value}</div>
+                    `;
+                    charSection.appendChild(attributeDiv);
+                }
+            });
+
+            // Add sections to modal
+            modalAttributes.appendChild(dndSection);
+            modalAttributes.appendChild(charSection);
 
             modalBackground.textContent = npc.data.background;
             modalAdditional.textContent = npc.data.additionalDetails;
@@ -1203,14 +1330,41 @@
 
                 const npc = currentNPCs[npcIndex];
 
-                // Generate new image
+                // First, generate a detailed prompt using Ollama's Stable Diffusion role
+                const promptResponse = await fetch('/api/ollama', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        prompt: JSON.stringify({
+                            name: npc.data.name,
+                            description: npc.data.description,
+                            attributes: npc.data.attributes,
+                            background: npc.data.background,
+                            additionalDetails: npc.data.additionalDetails
+                        }),
+                        model: window.config.defaultOllamaModel,
+                        role: 'sd-prompt',
+                        stream: false
+                    })
+                });
+
+                if (!promptResponse.ok) {
+                    throw new Error('Failed to generate image prompt');
+                }
+
+                const promptData = await promptResponse.json();
+                const imagePrompt = promptData.response.choices[0].message.content;
+
+                // Generate new image using the detailed prompt
                 const npcImageResponse = await fetch('/api/generate-image', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({
-                        prompt: `post-apocalyptic survivor, ${npc.data.name}, ${npc.data.description}, ${npc.data.attributes.clothing}, detailed portrait, realistic style`,
+                        prompt: imagePrompt,
                         areaId: `npc_${npcId}`,
                         width: 576,
                         height: 1024
@@ -1628,7 +1782,7 @@
                             'Content-Type': 'application/json'
                         },
                         body: JSON.stringify({
-                            prompt: `Generate character in this world: ${gameData.worldDescription}. Current location: ${gameData.currentLocation.title}. Location description: ${gameData.currentLocation.description}.`,
+                            prompt: `Generate character in this world: ${gameData.worldDescription}. Current location: ${gameData.currentLocation.title}. Location description: ${gameData.currentLocation.description}. Include D&D-style attributes (STR, DEX, CON, INT, WIS, CHA) with values between 3 and 18.`,
                             model: window.config.defaultOllamaModel,
                             role: 'character_builder',
                             stream: false
@@ -1657,6 +1811,44 @@
                         throw new Error('Missing required NPC data fields');
                     }
 
+                    // Ensure all D&D attributes are present and within valid range
+                    const requiredAttributes = ['STR', 'DEX', 'CON', 'INT', 'WIS', 'CHA'];
+                    for (const attr of requiredAttributes) {
+                        if (!npcData.attributes[attr]) {
+                            npcData.attributes[attr] = Math.floor(Math.random() * 16) + 3; // Random value between 3 and 18
+                        } else {
+                            // Ensure the value is within the valid range
+                            npcData.attributes[attr] = Math.max(3, Math.min(18, parseInt(npcData.attributes[attr])));
+                        }
+                    }
+
+                    // Generate a detailed prompt using Ollama's Stable Diffusion role
+                    const promptResponse = await fetch('/api/ollama', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            prompt: JSON.stringify({
+                                name: npcData.name,
+                                description: npcData.description,
+                                attributes: npcData.attributes,
+                                background: npcData.background,
+                                additionalDetails: npcData.additionalDetails
+                            }),
+                            model: window.config.defaultOllamaModel,
+                            role: 'sd-prompt',
+                            stream: false
+                        })
+                    });
+
+                    if (!promptResponse.ok) {
+                        throw new Error('Failed to generate image prompt');
+                    }
+
+                    const promptData = await promptResponse.json();
+                    const imagePrompt = promptData.response.choices[0].message.content;
+
                     // Generate and save NPC image
                     const npcImageResponse = await fetch('/api/generate-image', {
                         method: 'POST',
@@ -1664,7 +1856,7 @@
                             'Content-Type': 'application/json'
                         },
                         body: JSON.stringify({
-                            prompt: `post-apocalyptic survivor, ${npcData.name}, ${npcData.description}, ${npcData.attributes.clothing}, detailed portrait, realistic style`,
+                            prompt: imagePrompt,
                             areaId: `npc_${gameData.nextNPCId}`,
                             width: 576,
                             height: 1024
