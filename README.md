@@ -11,6 +11,30 @@ A comprehensive web interface for interacting with local AI services, including 
 - **Configuration Management**: Easy setup and testing of AI service endpoints
 - **Node Testing**: Verify the presence and functionality of required ComfyUI nodes
 - **Web UI**: User-friendly interface for all operations
+- **ComfyUI Integration**: Seamless integration with ComfyUI for image generation
+  - Default model: [DreamShaper 8](https://civitai.com/models/4384/dreamshaper)
+  - Support for custom models and configurations
+
+## Screenshots
+
+<div align="center">
+  <img src="docs/screenshots/main.png" alt="Main Interface" width="800"/>
+  <p><em>Main Interface - Overview of all available features</em></p>
+
+  <img src="docs/screenshots/prompt-builder.png" alt="Prompt Builder" width="800"/>
+  <p><em>Prompt Builder - Create detailed character descriptions</em></p>
+
+  <img src="docs/screenshots/background-removal.png" alt="Background Removal" width="800"/>
+  <p><em>Background Removal - Remove backgrounds from images</em></p>
+
+  <img src="docs/screenshots/ollama-sandbox.png" alt="Background Removal" width="800"/>
+  <p><em>Ollama API sandbox</em></p>
+
+  <img src="docs/screenshots/infinite-adventure.png" alt="Infinite Adventure" width="800"/>
+  <p><em>Infinite Adventure - Explore AI-generated worlds</em></p>
+
+  
+</div>
 
 ## Prerequisites
 
