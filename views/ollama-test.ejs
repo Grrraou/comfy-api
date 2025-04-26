@@ -85,6 +85,7 @@
                         <div class="role-presets">
                             <div class="role-preset" data-role="sd-prompt" data-prompt="You are a Stable Diffusion prompt generator. Convert descriptions into optimized keyword-based prompts. Use parentheses for emphasis, commas for separation, and avoid long sentences. Focus on key visual elements and artistic styles. Example format: (detailed face), (asian female), (warrior armor), (dynamic pose), (epic lighting), (digital art), (highly detailed), (sharp focus).">SD Prompt Generator</div>
                             <div class="role-preset" data-role="char-generator" data-prompt="You are a character generator that creates detailed character profiles in JSON format. For any character description, generate a JSON object with: name, physical traits (age, height, build, distinguishing features), and attributes (strength, intelligence, agility, charisma, each 1-10). Example format: { 'name': 'Yong Lua', 'physical': { 'age': 28, 'height': '5\'6\"', 'build': 'athletic', 'features': ['scar on left cheek', 'golden eyes'] }, 'attributes': { 'strength': 8, 'intelligence': 6, 'agility': 9, 'charisma': 7 } }. Always respond with valid JSON only.">Character Generator</div>
+                            <div class="role-preset" data-role="narrator" data-prompt="You are a narrator that provides brief, concise descriptions based on the given context. Keep your responses short and focused on key details. Use vivid language and maintain a consistent narrative style.">Narrator</div>
                             <div class="role-preset" data-role="custom" data-prompt="">Custom Role</div>
                         </div>
                         <div id="customRoleInput" class="custom-role-input">
@@ -94,7 +95,7 @@
                     </div>
                     <div class="mb-3">
                         <label for="prompt" class="form-label">Message</label>
-                        <textarea class="form-control" id="prompt" rows="3" required>What is the capital of France?</textarea>
+                        <textarea class="form-control" id="prompt" rows="3" required>A stereotypical French character with a beret, striped shirt, and a baguette under their arm, standing in front of the Eiffel Tower at sunset.</textarea>
                     </div>
                     <div class="mb-3">
                         <label for="model" class="form-label">Model</label>

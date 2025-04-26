@@ -4,13 +4,14 @@ const axios = require('axios');
 const config = {
     comfyuiUrl: process.env.COMFYUI_URL || 'http://host.docker.internal:8188',
     apiEndpoint: '/api',
+    ollamaUrl: process.env.OLLAMA_URL || 'http://host.docker.internal:11434',
     timeout: 5000 // 5 second timeout for basic connectivity test
 };
 
 async function testComfyUI() {
     try {
         const apiUrl = `${config.comfyuiUrl}${config.apiEndpoint}`;
-        console.log('Testing ComfyUI API at:', apiUrl);
+        console.log('Testing AI Services API at:', apiUrl);
 
         // Get system stats
         console.log('\nChecking system stats...');
@@ -51,16 +52,9 @@ async function testComfyUI() {
         });
 
         console.log('\nTest completed successfully!');
-        console.log('ComfyUI API is working correctly.');
+        console.log('AI Services API is working correctly.');
     } catch (error) {
-        if (error.code === 'ECONNREFUSED') {
-            console.error('Could not connect to ComfyUI. Is it running? Make sure ComfyUI is running on Windows and accessible from WSL.');
-        } else if (error.response) {
-            console.error('API Error:', error.response.status);
-            console.error('Error details:', error.response.data);
-        } else {
-            console.error('Error:', error.message);
-        }
+        console.error('Could not connect to AI Services. Is it running? Make sure the services are running and accessible from WSL.');
         process.exit(1);
     }
 }

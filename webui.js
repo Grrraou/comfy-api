@@ -97,7 +97,7 @@ app.post('/api/generate', express.json(), (req, res) => {
     const escapedNegative = (negative || '').replace(/'/g, "'\\''");
     const escapedModel = (model || '').replace(/'/g, "'\\''");
     
-    const command = `node generate-image.js '${escapedPrompt}' '${escapedNegative}' '${escapedModel}' '${width || 832}' '${height || 1216}'`;
+    const command = `node generate-image.js '${escapedPrompt}' '${escapedNegative}' '${escapedModel}' '${width || 448}' '${height || 640}'`;
     console.log('Executing command:', command);
     
     exec(command, (error, stdout, stderr) => {
@@ -127,11 +127,11 @@ app.post('/api/generate', express.json(), (req, res) => {
 app.get('/', async (req, res) => {
     const models = await getAvailableModels();
     res.render('index', { 
-        title: 'ComfyUI Image Generator',
+        title: 'Local AI API Sandbox',
         imagePath: null,
         error: null,
         models: models,
-        formData: { prompt: '', negative: '', model: '', width: 832, height: 1216 }
+        formData: { prompt: '', negative: '', model: '', width: 448, height: 640 }
     });
 });
 
@@ -139,11 +139,11 @@ app.get('/', async (req, res) => {
 app.get('/free-prompt', async (req, res) => {
     const models = await getAvailableModels();
     res.render('free-prompt', { 
-        title: 'Free Prompt - ComfyUI Image Generator',
+        title: 'Free Prompt - Local AI API Sandbox',
         imagePath: null,
         error: null,
         models: models,
-        formData: { prompt: '', negative: '', model: '', width: 832, height: 1216 }
+        formData: { prompt: '', negative: '', model: '', width: 448, height: 640 }
     });
 });
 
@@ -151,11 +151,11 @@ app.get('/free-prompt', async (req, res) => {
 app.get('/prompt-builder', async (req, res) => {
     const models = await getAvailableModels();
     res.render('prompt-builder', { 
-        title: 'Character Builder - ComfyUI Image Generator',
+        title: 'Character Builder - Local AI API Sandbox',
         imagePath: null,
         error: null,
         models: models,
-        formData: { negative: '', model: '', width: 832, height: 1216 }
+        formData: { negative: '', model: '', width: 448, height: 640 }
     });
 });
 
@@ -179,7 +179,7 @@ app.get('/remove-background', async (req, res) => {
     try {
         const models = await getAvailableModels();
         res.render('remove-background', { 
-            title: 'Remove Background - ComfyUI Image Generator',
+            title: 'Remove Background - Local AI API Sandbox',
             models: models,
             formData: {}
         });
@@ -393,6 +393,37 @@ app.post('/api/ollama', async (req, res) => {
             messages = conversation;
         }
         
+        // Add system message based on role
+        let systemMessage = "";
+        if (role === "narrator") {
+            systemMessage = "You are a narrator that provides brief, concise descriptions based on the given context. Keep your responses short and focused on key details.";
+        } else if (role === "character_builder") {
+            systemMessage = `You are a character builder that ALWAYS responds in valid JSON format. Your response must be a valid JSON object with the following structure:
+            {
+                "name": "string",
+                "description": "string",
+                "attributes": {
+                    "gender": "string",
+                    "age": "string",
+                    "bodyType": "string",
+                    "eyeColor": "string",
+                    "hairColor": "string",
+                    "ethnicity": "string",
+                    "clothing": "string"
+                },
+                "background": "string",
+                "additionalDetails": "string"
+            }
+            Do not include any text outside the JSON object. Do not include markdown formatting. The response must be parseable as JSON.`;
+        }
+        
+        if (systemMessage) {
+            messages.unshift({
+                role: "system",
+                content: systemMessage
+            });
+        }
+        
         messages.push({
             role: role || "user",
             content: prompt
@@ -401,8 +432,36 @@ app.post('/api/ollama', async (req, res) => {
         const response = await axios.post(`${config.ollamaUrl}/v1/chat/completions`, {
             model,
             messages,
-            stream: stream || false
+            stream: stream || false,
+            response_format: role === "character_builder" ? { type: "json_object" } : undefined,
+            temperature: role === "character_builder" ? 0.1 : 0.7 // Lower temperature for more consistent JSON
         });
+        
+        // For character builder, validate JSON response
+        if (role === "character_builder") {
+            try {
+                JSON.parse(response.data.choices[0].message.content);
+            } catch (e) {
+                console.error('Invalid JSON response:', e);
+                // Retry with a more strict prompt
+                const retryResponse = await axios.post(`${config.ollamaUrl}/v1/chat/completions`, {
+                    model,
+                    messages: [
+                        {
+                            role: "system",
+                            content: systemMessage
+                        },
+                        {
+                            role: "user",
+                            content: `Please provide the character description in valid JSON format. The response must be a valid JSON object and nothing else. Here's the character data: ${prompt}`
+                        }
+                    ],
+                    response_format: { type: "json_object" },
+                    temperature: 0.1
+                });
+                response.data = retryResponse.data;
+            }
+        }
         
         // Add the assistant's response to the conversation
         const assistantResponse = {
@@ -442,6 +501,74 @@ app.get('/api/ollama/models', async (req, res) => {
         res.json({ models });
     } catch (error) {
         res.status(500).json({ error: error.message });
+    }
+});
+
+// Configuration routes
+app.get('/config', async (req, res) => {
+    res.render('config', {
+        comfyuiUrl: config.comfyuiUrl,
+        ollamaUrl: config.ollamaUrl
+    });
+});
+
+// Test ComfyUI endpoint
+app.post('/api/config/test-comfyui', async (req, res) => {
+    try {
+        const { url } = req.body;
+        const response = await axios.get(`${url}/object_info`);
+        const models = [];
+        
+        // Get the CheckpointLoaderSimple node info
+        const checkpointNode = response.data.CheckpointLoaderSimple;
+        if (checkpointNode && checkpointNode.input && checkpointNode.input.required) {
+            const ckptName = checkpointNode.input.required.ckpt_name;
+            if (ckptName && ckptName[0] && ckptName[0].length > 0) {
+                models.push(...ckptName[0]);
+            }
+        }
+        
+        res.json({ success: true, models });
+    } catch (error) {
+        console.error('ComfyUI test error:', error.message);
+        res.json({ success: false, error: error.message });
+    }
+});
+
+// Test Ollama endpoint
+app.post('/api/config/test-ollama', async (req, res) => {
+    try {
+        const { url } = req.body;
+        const response = await axios.get(`${url}/api/tags`);
+        const models = response.data.models.map(model => model.name);
+        
+        res.json({ success: true, models });
+    } catch (error) {
+        console.error('Ollama test error:', error.message);
+        res.json({ success: false, error: error.message });
+    }
+});
+
+// Test Rembg node
+app.post('/api/config/test-rembg', async (req, res) => {
+    try {
+        const { url } = req.body;
+        const response = await axios.get(`${url}/object_info`);
+        
+        // Check if InspyrenetRembg node exists
+        const hasRembgNode = 'InspyrenetRembg' in response.data;
+        
+        if (hasRembgNode) {
+            res.json({ success: true });
+        } else {
+            res.json({ 
+                success: false, 
+                error: 'Rembg node not found. Please install the ComfyUI-Inspyrenet-Rembg custom node.' 
+            });
+        }
+    } catch (error) {
+        console.error('Rembg test error:', error.message);
+        res.json({ success: false, error: error.message });
     }
 });
 

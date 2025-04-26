@@ -1,5 +1,4 @@
 # Generated images
-public/images/generated.png
 public/images/*.png
 
 # Node.js

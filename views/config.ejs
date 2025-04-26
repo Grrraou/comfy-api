@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Configuration</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .container {
+            max-width: 800px;
+            margin-top: 2rem;
+        }
+        .endpoint-card {
+            margin-bottom: 2rem;
+        }
+        .test-result {
+            margin-top: 1rem;
+            padding: 1rem;
+            border-radius: 0.25rem;
+            display: none;
+        }
+        .test-result.success {
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+            display: block;
+        }
+        .test-result.error {
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+            display: block;
+        }
+        .test-result.loading {
+            background-color: #e2e3e5;
+            border: 1px solid #d6d8db;
+            color: #383d41;
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="mb-4">Configuration</h1>
+        
+        <div class="card endpoint-card">
+            <div class="card-body">
+                <h5 class="card-title">ComfyUI Endpoint</h5>
+                <form id="comfyuiForm">
+                    <div class="mb-3">
+                        <label for="comfyuiUrl" class="form-label">API URL</label>
+                        <input type="text" class="form-control" id="comfyuiUrl" value="<%= comfyuiUrl %>" required>
+                        <div class="form-text">Example: http://host.docker.internal:8188</div>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Save & Test</button>
+                </form>
+                <div id="comfyuiResult" class="test-result"></div>
+                
+                <div class="mt-4">
+                    <h6>Node Tests</h6>
+                    <button id="testRembg" class="btn btn-outline-secondary">Test Rembg Node</button>
+                    <div id="rembgResult" class="test-result mt-2"></div>
+                    <div id="rembgInstructions" class="mt-2" style="display: none;">
+                        <div class="alert alert-info">
+                            <h6>Rembg Node Installation Instructions</h6>
+                            <ol>
+                                <li>Open your ComfyUI installation directory</li>
+                                <li>Navigate to the <code>custom_nodes</code> folder</li>
+                                <li>Run the following command:
+                                    <pre class="mt-2"><code>git clone https://github.com/ltdrdata/ComfyUI-Inspyrenet-Rembg.git</code></pre>
+                                </li>
+                                <li>Restart ComfyUI</li>
+                            </ol>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card endpoint-card">
+            <div class="card-body">
+                <h5 class="card-title">Ollama Endpoint</h5>
+                <form id="ollamaForm">
+                    <div class="mb-3">
+                        <label for="ollamaUrl" class="form-label">API URL</label>
+                        <input type="text" class="form-control" id="ollamaUrl" value="<%= ollamaUrl %>" required>
+                        <div class="form-text">Example: http://host.docker.internal:11434</div>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Save & Test</button>
+                </form>
+                <div id="ollamaResult" class="test-result"></div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Environment Variables</h5>
+                <p class="card-text">These settings are stored in your environment variables. To make permanent changes, update your docker-compose.yml file.</p>
+                <pre class="bg-light p-3 rounded"><code>environment:
+  - COMFYUI_API=<span id="comfyuiEnv">http://host.docker.internal:8188/api</span>
+  - OLLAMA_URL=<span id="ollamaEnv">http://host.docker.internal:11434</span></code></pre>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ComfyUI endpoint testing
+        document.getElementById('comfyuiForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const url = document.getElementById('comfyuiUrl').value;
+            const resultDiv = document.getElementById('comfyuiResult');
+            
+            resultDiv.className = 'test-result loading';
+            resultDiv.textContent = 'Testing connection...';
+            
+            try {
+                const response = await fetch('/api/config/test-comfyui', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ url })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    resultDiv.className = 'test-result success';
+                    resultDiv.textContent = 'Connection successful! Available models: ' + data.models.join(', ');
+                    document.getElementById('comfyuiEnv').textContent = url + '/api';
+                } else {
+                    throw new Error(data.error || 'Connection failed');
+                }
+            } catch (error) {
+                resultDiv.className = 'test-result error';
+                resultDiv.textContent = 'Error: ' + error.message;
+            }
+        });
+
+        // Ollama endpoint testing
+        document.getElementById('ollamaForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const url = document.getElementById('ollamaUrl').value;
+            const resultDiv = document.getElementById('ollamaResult');
+            
+            resultDiv.className = 'test-result loading';
+            resultDiv.textContent = 'Testing connection...';
+            
+            try {
+                const response = await fetch('/api/config/test-ollama', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ url })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    resultDiv.className = 'test-result success';
+                    resultDiv.textContent = 'Connection successful! Available models: ' + data.models.join(', ');
+                    document.getElementById('ollamaEnv').textContent = url;
+                } else {
+                    throw new Error(data.error || 'Connection failed');
+                }
+            } catch (error) {
+                resultDiv.className = 'test-result error';
+                resultDiv.textContent = 'Error: ' + error.message;
+            }
+        });
+
+        // Rembg node testing
+        document.getElementById('testRembg').addEventListener('click', async () => {
+            const url = document.getElementById('comfyuiUrl').value;
+            const resultDiv = document.getElementById('rembgResult');
+            const instructionsDiv = document.getElementById('rembgInstructions');
+            
+            resultDiv.className = 'test-result loading';
+            resultDiv.textContent = 'Testing Rembg node...';
+            instructionsDiv.style.display = 'none';
+            
+            try {
+                const response = await fetch('/api/config/test-rembg', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ url })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    resultDiv.className = 'test-result success';
+                    resultDiv.textContent = 'Rembg node is installed and working correctly!';
+                } else {
+                    resultDiv.className = 'test-result error';
+                    resultDiv.textContent = 'Rembg node is not installed or not working correctly.';
+                    instructionsDiv.style.display = 'block';
+                }
+            } catch (error) {
+                resultDiv.className = 'test-result error';
+                resultDiv.textContent = 'Error: ' + error.message;
+                instructionsDiv.style.display = 'block';
+            }
+        });
+    </script>
+</body>
+</html> 

@@ -6,6 +6,7 @@ const path = require('path');
 const config = {
     comfyuiUrl: process.env.COMFYUI_URL || 'http://host.docker.internal:8188',
     apiEndpoint: '/api',
+    ollamaUrl: process.env.OLLAMA_URL || 'http://host.docker.internal:11434',
     timeout: 300000, // 5 minutes timeout for generation
     pollInterval: 1000, // 1 second between polls
     outputDir: path.join(__dirname, 'public', 'images')
@@ -25,7 +26,7 @@ async function getAvailableModels() {
 }
 
 // Example workflow for text-to-image generation
-function createWorkflow(prompt, negativePrompt = "text, watermark", modelName = "dreamshaper_8.safetensors", width = 832, height = 1216) {
+function createWorkflow(prompt, negativePrompt = "text, watermark", modelName = "dreamshaper_8.safetensors", width = 448, height = 640) {
     return {
         "prompt": {
             "3": {
@@ -80,7 +81,7 @@ function createWorkflow(prompt, negativePrompt = "text, watermark", modelName = 
             },
             "9": {
                 "inputs": {
-                    "filename_prefix": "ComfyUI",
+                    "filename_prefix": "ai-sandbox",
                     "images": ["8", 0]
                 },
                 "class_type": "SaveImage"
@@ -217,8 +218,8 @@ const args = process.argv.slice(2);
 const prompt = args[0];
 const negativePrompt = args[1];
 const modelName = args[2];
-const width = parseInt(args[3]) || 832;
-const height = parseInt(args[4]) || 1216;
+const width = parseInt(args[3]) || 448;
+const height = parseInt(args[4]) || 640;
 
 if (!prompt) {
     console.error('Please provide a prompt as a command line argument');
