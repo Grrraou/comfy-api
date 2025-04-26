@@ -69,7 +69,7 @@ A comprehensive web interface for interacting with local AI services, including 
 3. Build and start the service:
    ```bash
    make build
-   make up
+   make webui
    ```
 4. Access the web UI at http://localhost:3000
 
