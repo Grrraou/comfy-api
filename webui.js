@@ -147,48 +147,177 @@ async function getAvailableModels() {
 }
 
 // API endpoint for image generation
-app.post('/api/generate', express.json(), (req, res) => {
-    const { prompt, negative, model, width, height } = req.body;
-    
-    if (!prompt) {
-        console.log('Received request body:', req.body);
-        return res.status(400).json({ error: 'Prompt is required' });
-    }
-
-    // Use default values if not provided
-    const finalModel = model || config.defaultModel;
-    const finalWidth = width || config.defaultWidth;
-    const finalHeight = height || config.defaultHeight;
-
-    // Escape single quotes and wrap in single quotes to avoid shell interpretation issues
-    const escapedPrompt = prompt.replace(/'/g, "'\\''");
-    const escapedNegative = (negative || '').replace(/'/g, "'\\''");
-    const escapedModel = finalModel.replace(/'/g, "'\\''");
-    
-    const command = `node generate-image.js '${escapedPrompt}' '${escapedNegative}' '${escapedModel}' '${finalWidth}' '${finalHeight}'`;
-    console.log('Executing command:', command);
-    
-    exec(command, (error, stdout, stderr) => {
-        if (error) {
-            console.error('Command execution error:', error);
-            console.error('stderr:', stderr);
-            console.error('stdout:', stdout);
-            return res.status(500).json({ 
-                error: 'Failed to generate image',
-                details: error.message,
-                stderr: stderr,
-                stdout: stdout
-            });
-        }
+app.post('/api/generate', express.json(), async (req, res) => {
+    try {
+        const { prompt, negative, model, width, height } = req.body;
         
-        const imagePath = '/images/generated.png';
-        console.log('Image generation completed, path:', imagePath);
-        return res.json({ 
-            success: true, 
-            imagePath,
-            formData: { prompt, negative, model, width, height }
+        if (!prompt) {
+            return res.status(400).json({ error: 'Prompt is required' });
+        }
+
+        // Use provided values or defaults
+        const finalModel = model || config.defaultModel;
+        const finalWidth = width || config.defaultWidth;
+        const finalHeight = height || config.defaultHeight;
+        const finalNegative = negative || '';
+
+        // Escape single quotes and wrap in single quotes to avoid shell interpretation issues
+        const escapedPrompt = prompt.replace(/'/g, "'\\''");
+        const escapedNegative = finalNegative.replace(/'/g, "'\\''");
+        const escapedModel = finalModel.replace(/'/g, "'\\''");
+        
+        const command = `node generate-image.js '${escapedPrompt}' '${escapedNegative}' '${escapedModel}' '${finalWidth}' '${finalHeight}'`;
+        console.log('Executing command:', command);
+
+        exec(command, (error, stdout, stderr) => {
+            if (error) {
+                console.error('Error:', error);
+                console.error('Stderr:', stderr);
+                return res.status(500).json({ 
+                    error: 'Failed to generate image',
+                    details: error.message,
+                    stderr: stderr
+                });
+            }
+
+            try {
+                const imagePath = stdout.trim();
+                if (!imagePath) {
+                    throw new Error('No image path returned');
+                }
+                res.json({ 
+                    success: true, 
+                    imagePath: imagePath,
+                    formData: { prompt, negative, model, width, height }
+                });
+            } catch (parseError) {
+                console.error('Error parsing output:', parseError);
+                res.status(500).json({ 
+                    error: 'Failed to parse image path',
+                    details: parseError.message
+                });
+            }
         });
-    });
+    } catch (error) {
+        console.error('Error:', error);
+        res.status(500).json({ 
+            error: 'Internal server error',
+            details: error.message
+        });
+    }
+});
+
+// Add a new endpoint specifically for the survival game
+app.post('/api/generate-image', express.json(), async (req, res) => {
+    try {
+        const { prompt, areaId } = req.body;
+        
+        if (!prompt) {
+            return res.status(400).json({ error: 'Prompt is required' });
+        }
+
+        // Use default values
+        const finalModel = config.defaultModel;
+        const finalWidth = config.defaultWidth;
+        const finalHeight = config.defaultHeight;
+
+        // Escape single quotes and wrap in single quotes to avoid shell interpretation issues
+        const escapedPrompt = prompt.replace(/'/g, "'\\''");
+        const escapedModel = finalModel.replace(/'/g, "'\\''");
+        const escapedAreaId = areaId ? `'${areaId}'` : "''";
+        
+        const command = `node generate-image.js '${escapedPrompt}' '' '${escapedModel}' '${finalWidth}' '${finalHeight}' ${escapedAreaId}`;
+        console.log('Executing command:', command);
+
+        exec(command, (error, stdout, stderr) => {
+            if (error) {
+                console.error('Error:', error);
+                console.error('Stderr:', stderr);
+                return res.status(500).json({ 
+                    error: 'Failed to generate image',
+                    details: error.message,
+                    stderr: stderr
+                });
+            }
+
+            try {
+                const imagePath = stdout.trim();
+                if (!imagePath) {
+                    throw new Error('No image path returned');
+                }
+                res.json({ success: true, imageUrl: imagePath });
+            } catch (parseError) {
+                console.error('Error parsing output:', parseError);
+                res.status(500).json({ 
+                    error: 'Failed to parse image path',
+                    details: parseError.message
+                });
+            }
+        });
+    } catch (error) {
+        console.error('Error:', error);
+        res.status(500).json({ 
+            error: 'Internal server error',
+            details: error.message
+        });
+    }
+});
+
+// Original image generation endpoint for prompt-builder and other tools
+app.post('/api/generate', express.json(), async (req, res) => {
+    try {
+        const { prompt, negative, model, width, height } = req.body;
+        
+        if (!prompt) {
+            return res.status(400).json({ error: 'Prompt is required' });
+        }
+
+        // Use provided values or defaults
+        const finalModel = model || config.defaultModel;
+        const finalWidth = width || config.defaultWidth;
+        const finalHeight = height || config.defaultHeight;
+        const finalNegative = negative || '';
+
+        // Escape single quotes and wrap in single quotes to avoid shell interpretation issues
+        const escapedPrompt = prompt.replace(/'/g, "'\\''");
+        const escapedNegative = finalNegative.replace(/'/g, "'\\''");
+        const escapedModel = finalModel.replace(/'/g, "'\\''");
+        
+        const command = `node generate-image.js '${escapedPrompt}' '${escapedNegative}' '${escapedModel}' '${finalWidth}' '${finalHeight}'`;
+        console.log('Executing command:', command);
+
+        exec(command, (error, stdout, stderr) => {
+            if (error) {
+                console.error('Error:', error);
+                console.error('Stderr:', stderr);
+                return res.status(500).json({ 
+                    error: 'Failed to generate image',
+                    details: error.message,
+                    stderr: stderr
+                });
+            }
+
+            try {
+                const imagePath = stdout.trim();
+                if (!imagePath) {
+                    throw new Error('No image path returned');
+                }
+                res.json({ success: true, imagePath: imagePath });
+            } catch (parseError) {
+                console.error('Error parsing output:', parseError);
+                res.status(500).json({ 
+                    error: 'Failed to parse image path',
+                    details: parseError.message
+                });
+            }
+        });
+    } catch (error) {
+        console.error('Error:', error);
+        res.status(500).json({ 
+            error: 'Internal server error',
+            details: error.message
+        });
+    }
 });
 
 // Home page
@@ -458,6 +587,11 @@ app.get('/infinite-adventure', async (req, res) => {
         title: 'Infinite Adventure - Local AI API Sandbox',
         models: models
     });
+});
+
+// Add Survival Game route
+app.get('/survival-game', (req, res) => {
+    res.render('survival-game', { title: 'Post-Apocalyptic Survival' });
 });
 
 // Add Ollama API endpoint
@@ -793,6 +927,59 @@ async function initializeDefaultOllamaModel() {
 
 // Call initialization on startup
 initializeDefaultOllamaModel();
+
+// API endpoint for generating new locations
+app.post('/api/generate-location', async (req, res) => {
+    try {
+        const { context, previousLocations } = req.body;
+        
+        // Call Ollama API to generate location description
+        const response = await axios.post(`${config.ollamaUrl}/api/generate`, {
+            model: config.defaultOllamaModel,
+            prompt: `Generate a unique post-apocalyptic location description. Context: ${context}. 
+                    Previous locations: ${previousLocations.join(', ')}. 
+                    Return the response in valid JSON format with 'title' and 'description' fields.
+                    Example format: {"title": "Abandoned Hospital", "description": "A description here"}`,
+            stream: false
+        });
+
+        console.log('Ollama response:', response.data);
+
+        // Try to parse the response
+        let locationData;
+        try {
+            // First try to parse the entire response
+            locationData = JSON.parse(response.data.response);
+        } catch (e) {
+            console.error('Failed to parse full response, trying to extract JSON:', e);
+            // If that fails, try to extract JSON from the response text
+            const jsonMatch = response.data.response.match(/\{[\s\S]*\}/);
+            if (jsonMatch) {
+                locationData = JSON.parse(jsonMatch[0]);
+            } else {
+                throw new Error('Could not find valid JSON in response');
+            }
+        }
+
+        // Validate the response structure
+        if (!locationData.title || !locationData.description) {
+            throw new Error('Invalid location data structure');
+        }
+
+        res.json(locationData);
+    } catch (error) {
+        console.error('Error generating location:', error);
+        console.error('Error details:', {
+            message: error.message,
+            response: error.response?.data,
+            status: error.response?.status
+        });
+        res.status(500).json({ 
+            error: 'Failed to generate location',
+            details: error.message
+        });
+    }
+});
 
 app.listen(port, () => {
     console.log(`Web UI server running at http://localhost:${port}`);

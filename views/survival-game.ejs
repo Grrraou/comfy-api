@@ -1,0 +1,790 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Post-Apocalyptic Survival</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            background-color: #1a1a1a;
+            color: #ffffff;
+            display: flex;
+            overflow: hidden;
+        }
+
+        .sidebar {
+            width: 300px;
+            background-color: #2a2a2a;
+            padding: 1rem;
+            display: flex;
+            flex-direction: column;
+            border-right: 1px solid #3a3a3a;
+        }
+
+        .game-title {
+            font-size: 1.5rem;
+            color: #ff6b6b;
+            margin: 0 0 1rem 0;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid #3a3a3a;
+            position: relative;
+        }
+
+        .game-controls {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .button {
+            padding: 0.8rem 1.5rem;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            text-align: center;
+        }
+
+        .start-button {
+            background-color: #4CAF50;
+            color: white;
+        }
+
+        .reset-button {
+            position: absolute;
+            top: 0;
+            right: 0;
+            background-color: #f44336;
+            color: white;
+            padding: 0.3rem 0.6rem;
+            font-size: 0.8rem;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transform: translateY(-5px);
+        }
+
+        .reset-button:hover {
+            background-color: #d32f2f;
+        }
+
+        .regen-button {
+            position: absolute;
+            top: 0;
+            right: 30px;
+            background-color: #9C27B0;
+            color: white;
+            padding: 0.3rem 0.6rem;
+            font-size: 0.8rem;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transform: translateY(-5px);
+        }
+
+        .regen-button:hover {
+            background-color: #7B1FA2;
+        }
+
+        .explore-button {
+            background-color: #2196F3;
+            color: white;
+        }
+
+        .button:hover {
+            opacity: 0.9;
+            transform: translateY(-2px);
+        }
+
+        .area-link {
+            position: absolute;
+            padding: 1rem;
+            background-color: rgba(0, 0, 0, 0.7);
+            border: 2px solid #ff6b6b;
+            border-radius: 4px;
+            color: white;
+            text-decoration: none;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            z-index: 3;
+        }
+
+        .area-link:hover {
+            background-color: rgba(0, 0, 0, 0.9);
+            transform: scale(1.05);
+        }
+
+        .area-link.top-left {
+            top: 20px;
+            left: 20px;
+        }
+
+        .area-link.top-right {
+            top: 20px;
+            right: 20px;
+        }
+
+        .area-link.bottom-left {
+            bottom: 80px;
+            left: 20px;
+        }
+
+        .area-link.bottom-right {
+            bottom: 80px;
+            right: 20px;
+        }
+
+        .nothing-found {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: rgba(0, 0, 0, 0.8);
+            padding: 1.5rem;
+            border-radius: 4px;
+            border: 2px solid #ff6b6b;
+            color: white;
+            text-align: center;
+            z-index: 3;
+            animation: fadeIn 0.5s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .game-stats {
+            background-color: #333333;
+            padding: 1rem;
+            border-radius: 4px;
+            margin-top: auto;
+        }
+
+        .stat-item {
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-label {
+            color: #ff6b6b;
+            font-weight: bold;
+        }
+
+        .main-content {
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .location-image {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            z-index: 1;
+        }
+
+        .location-description {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background-color: rgba(0, 0, 0, 0.8);
+            padding: 1.5rem;
+            z-index: 2;
+            border-top: 2px solid #ff6b6b;
+        }
+
+        .location-description h2 {
+            color: #ff6b6b;
+            margin: 0 0 0.5rem 0;
+            font-size: 1.5rem;
+        }
+
+        .location-description p {
+            color: #cccccc;
+            margin: 0;
+            line-height: 1.6;
+        }
+
+        .game-state {
+            display: none;
+            height: 100%;
+        }
+
+        .start-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background-color: rgba(0, 0, 0, 0.9);
+            z-index: 3;
+            padding: 2rem;
+            text-align: center;
+        }
+
+        .start-screen h2 {
+            color: #ff6b6b;
+            font-size: 2.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .start-screen p {
+            color: #cccccc;
+            margin-bottom: 2rem;
+            line-height: 1.6;
+            max-width: 600px;
+            font-size: 1.1rem;
+        }
+
+        .start-screen .button {
+            padding: 1rem 2rem;
+            font-size: 1.2rem;
+            margin-top: 1rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <h1 class="game-title">
+            Post-Apocalyptic Survival
+            <button id="resetButton" class="button reset-button" title="Reset Game">↺</button>
+            <button id="regenButton" class="button regen-button" title="Regenerate Background">⟳</button>
+        </h1>
+        <div class="game-controls">
+            <button id="exploreButton" class="button explore-button">Explore Area</button>
+        </div>
+        <div class="game-stats">
+            <div class="stat-item">
+                <span class="stat-label">Current Location:</span>
+                <span id="currentLocation">-</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Locations Visited:</span>
+                <span id="locationsVisited">0</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Days Survived:</span>
+                <span id="daysSurvived">0</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="main-content">
+        <div id="startScreen" class="start-screen">
+            <h2>Welcome to the Post-Apocalyptic World</h2>
+            <p>In this game, you'll navigate through a world ravaged by disaster. Your choices will determine your survival. 
+               Each location you visit will be uniquely generated, and you'll need to make strategic decisions to stay alive.</p>
+            <p>Click "Start Game" to begin your journey.</p>
+            <button id="startButton" class="button start-button">Start Game</button>
+        </div>
+
+        <div id="gameState" class="game-state">
+            <img id="locationImage" class="location-image" src="" alt="Current Location">
+            <div class="location-description">
+                <h2 id="locationTitle">Current Location</h2>
+                <p id="locationText">Loading location description...</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const startButton = document.getElementById('startButton');
+            const resetButton = document.getElementById('resetButton');
+            const exploreButton = document.getElementById('exploreButton');
+            const regenButton = document.getElementById('regenButton');
+            const startScreen = document.getElementById('startScreen');
+            const gameState = document.getElementById('gameState');
+            const locationImage = document.getElementById('locationImage');
+            const locationTitle = document.getElementById('locationTitle');
+            const locationText = document.getElementById('locationText');
+            const currentLocationSpan = document.getElementById('currentLocation');
+            const locationsVisitedSpan = document.getElementById('locationsVisited');
+            const daysSurvivedSpan = document.getElementById('daysSurvived');
+
+            // Load game state from localStorage
+            let gameData = loadGameState();
+
+            // If there's saved game state, show the game screen
+            if (gameData.currentLocation) {
+                startScreen.style.display = 'none';
+                gameState.style.display = 'block';
+                displayCurrentLocation();
+            }
+
+            function loadGameState() {
+                try {
+                    const savedState = localStorage.getItem('survivalGameState');
+                    if (savedState) {
+                        const parsed = JSON.parse(savedState);
+                        // Initialize Maps from saved data
+                        const visitedLocations = new Map(Object.entries(parsed.visitedLocations || {}));
+                        const discoveredAreas = new Map(Object.entries(parsed.discoveredAreas || {}));
+                        const areaConnections = new Map(Object.entries(parsed.areaConnections || {}));
+                        const linkPositions = new Map(Object.entries(parsed.linkPositions || {}));
+                        
+                        return {
+                            currentLocation: parsed.currentLocation || null,
+                            visitedLocations,
+                            discoveredAreas,
+                            areaConnections,
+                            linkPositions,
+                            nextAreaId: parsed.nextAreaId || 1,
+                            daysSurvived: parsed.daysSurvived || 0
+                        };
+                    }
+                } catch (error) {
+                    console.error('Error loading game state:', error);
+                }
+                
+                // Return default state if loading fails
+                return {
+                    currentLocation: null,
+                    visitedLocations: new Map(),
+                    discoveredAreas: new Map(),
+                    areaConnections: new Map(),
+                    linkPositions: new Map(),
+                    nextAreaId: 1,
+                    daysSurvived: 0
+                };
+            }
+
+            function saveGameState() {
+                try {
+                    // Convert Maps to Objects for storage, handling empty Maps
+                    const visitedLocationsObj = gameData.visitedLocations.size > 0 
+                        ? Object.fromEntries(gameData.visitedLocations) 
+                        : {};
+                    const discoveredAreasObj = gameData.discoveredAreas.size > 0 
+                        ? Object.fromEntries(gameData.discoveredAreas) 
+                        : {};
+                    const areaConnectionsObj = gameData.areaConnections.size > 0
+                        ? Object.fromEntries(gameData.areaConnections)
+                        : {};
+                    const linkPositionsObj = gameData.linkPositions.size > 0
+                        ? Object.fromEntries(gameData.linkPositions)
+                        : {};
+
+                    // Create the state object
+                    const stateToSave = {
+                        currentLocation: gameData.currentLocation,
+                        visitedLocations: visitedLocationsObj,
+                        discoveredAreas: discoveredAreasObj,
+                        areaConnections: areaConnectionsObj,
+                        linkPositions: linkPositionsObj,
+                        nextAreaId: gameData.nextAreaId,
+                        daysSurvived: gameData.daysSurvived
+                    };
+
+                    // Save to localStorage
+                    localStorage.setItem('survivalGameState', JSON.stringify(stateToSave));
+                } catch (error) {
+                    console.error('Error saving game state:', error);
+                }
+            }
+
+            function displayCurrentLocation() {
+                if (gameData.currentLocation) {
+                    locationTitle.textContent = gameData.currentLocation.title;
+                    locationText.textContent = gameData.currentLocation.description;
+                    if (gameData.currentLocation.imageUrl) {
+                        locationImage.src = gameData.currentLocation.imageUrl;
+                    }
+                    updateGameStats();
+                    displayDiscoveredAreas();
+                }
+            }
+
+            function displayDiscoveredAreas() {
+                // Remove any existing area links
+                document.querySelectorAll('.area-link').forEach(link => link.remove());
+
+                if (!gameData.currentLocation) return;
+
+                // Get connected areas for current location, excluding current location
+                const connectedAreas = (gameData.areaConnections.get(gameData.currentLocation.title) || [])
+                    .filter(area => area.title !== gameData.currentLocation.title);
+                
+                // Get available corners (excluding those already used)
+                const usedCorners = new Set();
+                connectedAreas.forEach(area => {
+                    const position = gameData.linkPositions.get(`${gameData.currentLocation.title}-${area.title}`);
+                    if (position) usedCorners.add(position);
+                });
+
+                const availableCorners = ['top-left', 'top-right', 'bottom-left', 'bottom-right']
+                    .filter(corner => !usedCorners.has(corner));
+
+                // Create links for connected areas
+                connectedAreas.forEach(area => {
+                    // Get or assign a corner position
+                    let position = gameData.linkPositions.get(`${gameData.currentLocation.title}-${area.title}`);
+                    if (!position && availableCorners.length > 0) {
+                        position = availableCorners.shift();
+                        gameData.linkPositions.set(`${gameData.currentLocation.title}-${area.title}`, position);
+                        gameData.linkPositions.set(`${area.title}-${gameData.currentLocation.title}`, position);
+                        saveGameState();
+                    }
+
+                    if (position) {
+                        const link = document.createElement('a');
+                        link.className = `area-link ${position}`;
+                        link.href = '#';
+                        link.textContent = `→ ${area.title}`;
+                        link.onclick = (e) => {
+                            e.preventDefault();
+                            navigateToArea(area);
+                        };
+                        gameState.appendChild(link);
+                    }
+                });
+            }
+
+            function navigateToArea(area) {
+                // Use the stored area data
+                gameData.currentLocation = {
+                    title: area.title,
+                    description: area.description,
+                    imageUrl: area.imageUrl,
+                    areaId: area.areaId
+                };
+                displayCurrentLocation();
+                saveGameState();
+            }
+
+            function showNothingFound(message) {
+                const messageDiv = document.createElement('div');
+                messageDiv.className = 'nothing-found';
+                messageDiv.textContent = message;
+                gameState.appendChild(messageDiv);
+                setTimeout(() => {
+                    messageDiv.remove();
+                }, 3000);
+            }
+
+            exploreButton.addEventListener('click', async () => {
+                // 60% chance to find something
+                if (Math.random() < 0.6) {
+                    await generateNewLocation();
+                } else {
+                    showNothingFound('You explore the area but find nothing of interest...');
+                }
+            });
+
+            startButton.addEventListener('click', async () => {
+                startScreen.style.display = 'none';
+                gameState.style.display = 'block';
+                await generateInitialLocation();
+            });
+
+            resetButton.addEventListener('click', async () => {
+                if (confirm('Are you sure you want to reset the game? All progress will be lost.')) {
+                    // Clear the game state
+                    gameData = {
+                        currentLocation: null,
+                        visitedLocations: new Map(),
+                        discoveredAreas: new Map(),
+                        areaConnections: new Map(),
+                        linkPositions: new Map(),
+                        nextAreaId: 1,
+                        daysSurvived: 0
+                    };
+                    
+                    // Clear localStorage
+                    localStorage.removeItem('survivalGameState');
+                    
+                    // Reset UI
+                    locationImage.src = '';
+                    locationTitle.textContent = 'Current Location';
+                    locationText.textContent = 'Loading location description...';
+                    updateGameStats();
+                    
+                    // Show start screen
+                    startScreen.style.display = 'flex';
+                    gameState.style.display = 'none';
+                }
+            });
+
+            regenButton.addEventListener('click', async () => {
+                if (!gameData.currentLocation) {
+                    alert('No location selected. Please start the game first.');
+                    return;
+                }
+                
+                if (!confirm('Are you sure you want to regenerate the background? This will create a new image for the current location.')) {
+                    return;
+                }
+                
+                try {
+                    // Show loading state
+                    locationImage.style.opacity = '0.5';
+                    
+                    const imageResponse = await fetch('/api/generate-image', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            prompt: `post-apocalyptic ${gameData.currentLocation.title}, detailed environment, dark atmosphere, realistic style`,
+                            areaId: gameData.currentLocation.areaId
+                        })
+                    });
+
+                    if (!imageResponse.ok) {
+                        throw new Error('Failed to regenerate image');
+                    }
+
+                    const imageData = await imageResponse.json();
+                    if (!imageData.success) {
+                        throw new Error(imageData.error || 'Failed to generate image');
+                    }
+                    
+                    // Ensure the image URL is properly formatted
+                    const imageUrl = imageData.imageUrl.startsWith('/') ? imageData.imageUrl : `/${imageData.imageUrl}`;
+                    
+                    // Update the current location's image
+                    gameData.currentLocation.imageUrl = imageUrl;
+                    
+                    // Update the visited locations map
+                    if (gameData.visitedLocations.has(gameData.currentLocation.title)) {
+                        const locationData = gameData.visitedLocations.get(gameData.currentLocation.title);
+                        locationData.imageUrl = imageUrl;
+                        gameData.visitedLocations.set(gameData.currentLocation.title, locationData);
+                    }
+                    
+                    // Update the discovered areas
+                    for (const [locationTitle, areas] of gameData.discoveredAreas.entries()) {
+                        const updatedAreas = areas.map(area => {
+                            if (area.title === gameData.currentLocation.title) {
+                                return { ...area, imageUrl };
+                            }
+                            return area;
+                        });
+                        gameData.discoveredAreas.set(locationTitle, updatedAreas);
+                    }
+
+                    // Update the display and save state
+                    locationImage.src = imageUrl;
+                    locationImage.style.opacity = '1';
+                    saveGameState();
+
+                } catch (error) {
+                    console.error('Error regenerating image:', error);
+                    locationImage.style.opacity = '1';
+                    alert(`Error: ${error.message}\nPlease try again.`);
+                }
+            });
+
+            function updateGameStats() {
+                currentLocationSpan.textContent = gameData.currentLocation?.title || '-';
+                locationsVisitedSpan.textContent = gameData.visitedLocations.size;
+                daysSurvivedSpan.textContent = gameData.daysSurvived;
+                saveGameState();
+            }
+
+            async function generateInitialLocation() {
+                try {
+                    // Call Ollama API to generate location description
+                    const response = await fetch('/api/generate-location', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            context: 'post-apocalyptic world',
+                            previousLocations: []
+                        })
+                    });
+
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        throw new Error(errorData.details || 'Failed to generate location');
+                    }
+
+                    const locationData = await response.json();
+                    
+                    // Generate and display location image
+                    const imageResponse = await fetch('/api/generate-image', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            prompt: `post-apocalyptic ${locationData.title}, detailed environment, dark atmosphere, realistic style`,
+                            areaId: gameData.nextAreaId
+                        })
+                    });
+
+                    if (!imageResponse.ok) {
+                        const errorData = await imageResponse.json();
+                        throw new Error(errorData.details || 'Failed to generate image');
+                    }
+
+                    const imageData = await imageResponse.json();
+                    if (!imageData.success) {
+                        throw new Error(imageData.error || 'Failed to generate image');
+                    }
+                    
+                    // Ensure the image URL is properly formatted
+                    const imageUrl = imageData.imageUrl.startsWith('/') ? imageData.imageUrl : `/${imageData.imageUrl}`;
+
+                    // Create initial area data
+                    const initialArea = {
+                        title: locationData.title,
+                        description: locationData.description,
+                        areaId: gameData.nextAreaId,
+                        imageUrl: imageUrl
+                    };
+
+                    // Set as current location
+                    gameData.currentLocation = initialArea;
+
+                    // Store location data
+                    gameData.visitedLocations.set(locationData.title, {
+                        description: locationData.description,
+                        imageUrl: imageUrl,
+                        areaId: gameData.nextAreaId
+                    });
+
+                    // Initialize connections for the initial area
+                    gameData.areaConnections.set(initialArea.title, []);
+
+                    // Increment area ID for next location
+                    gameData.nextAreaId++;
+                    gameData.daysSurvived++;
+
+                    // Update game stats and save state
+                    updateGameStats();
+                    displayCurrentLocation();
+                    saveGameState();
+
+                } catch (error) {
+                    console.error('Error in generateInitialLocation:', error);
+                    showNothingFound(`Error: ${error.message}`);
+                    // Reset to start screen on error
+                    startScreen.style.display = 'flex';
+                    gameState.style.display = 'none';
+                }
+            }
+
+            async function generateNewLocation() {
+                try {
+                    // Call Ollama API to generate location description
+                    const response = await fetch('/api/generate-location', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            context: 'post-apocalyptic world',
+                            previousLocations: Array.from(gameData.visitedLocations.keys())
+                        })
+                    });
+
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        throw new Error(errorData.details || 'Failed to generate location');
+                    }
+
+                    const locationData = await response.json();
+                    
+                    // Generate and display location image
+                    const imageResponse = await fetch('/api/generate-image', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            prompt: `post-apocalyptic ${locationData.title}, detailed environment, dark atmosphere, realistic style`,
+                            areaId: gameData.nextAreaId
+                        })
+                    });
+
+                    if (!imageResponse.ok) {
+                        const errorData = await imageResponse.json();
+                        throw new Error(errorData.details || 'Failed to generate image');
+                    }
+
+                    const imageData = await imageResponse.json();
+                    if (!imageData.success) {
+                        throw new Error(imageData.error || 'Failed to generate image');
+                    }
+                    
+                    // Ensure the image URL is properly formatted
+                    const imageUrl = imageData.imageUrl.startsWith('/') ? imageData.imageUrl : `/${imageData.imageUrl}`;
+
+                    // Create new area data
+                    const newArea = {
+                        title: locationData.title,
+                        description: locationData.description,
+                        areaId: gameData.nextAreaId,
+                        imageUrl: imageUrl
+                    };
+
+                    // Store location data
+                    gameData.visitedLocations.set(locationData.title, {
+                        description: locationData.description,
+                        imageUrl: imageUrl,
+                        areaId: gameData.nextAreaId
+                    });
+
+                    // Create bidirectional connection between current and new area
+                    if (gameData.currentLocation) {
+                        const currentConnections = gameData.areaConnections.get(gameData.currentLocation.title) || [];
+                        if (!currentConnections.some(area => area.title === newArea.title)) {
+                            gameData.areaConnections.set(
+                                gameData.currentLocation.title,
+                                [...currentConnections, newArea]
+                            );
+                        }
+
+                        const newConnections = gameData.areaConnections.get(newArea.title) || [];
+                        if (!newConnections.some(area => area.title === gameData.currentLocation.title)) {
+                            gameData.areaConnections.set(
+                                newArea.title,
+                                [...newConnections, gameData.currentLocation]
+                            );
+                        }
+                    }
+
+                    // Increment area ID for next location
+                    gameData.nextAreaId++;
+                    gameData.daysSurvived++;
+
+                    // Update game stats and save state
+                    updateGameStats();
+                    displayDiscoveredAreas();
+                    saveGameState();
+
+                    // Show success message
+                    showNothingFound(`Discovered new area: ${newArea.title}`);
+
+                } catch (error) {
+                    console.error('Error in generateNewLocation:', error);
+                    showNothingFound(`Error: ${error.message}`);
+                }
+            }
+        });
+    </script>
+</body>
+</html> 

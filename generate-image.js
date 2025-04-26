@@ -9,7 +9,8 @@ const config = {
     ollamaUrl: process.env.OLLAMA_URL || 'http://host.docker.internal:11434',
     timeout: 300000, // 5 minutes timeout for generation
     pollInterval: 1000, // 1 second between polls
-    outputDir: path.join(__dirname, 'public', 'images')
+    outputDir: path.join(__dirname, 'public', 'images'),
+    survivalDir: path.join(__dirname, 'public', 'survival')
 };
 
 async function getAvailableModels() {
@@ -93,8 +94,8 @@ function createWorkflow(prompt, negativePrompt = "text, watermark", modelName = 
 async function validateWorkflow(workflow) {
     try {
         const apiUrl = `${config.comfyuiUrl}${config.apiEndpoint}`;
-        console.log('Validating workflow...');
-        console.log('Workflow:', JSON.stringify(workflow, null, 2));
+        console.error('Validating workflow...');
+        console.error('Workflow:', JSON.stringify(workflow, null, 2));
         
         const response = await axios.post(`${apiUrl}/prompt`, workflow, {
             timeout: config.timeout
@@ -109,21 +110,21 @@ async function validateWorkflow(workflow) {
     }
 }
 
-async function generateImage(prompt, negativePrompt, modelName, width, height) {
+async function generateImage(prompt, negativePrompt, modelName, width, height, areaId = null) {
     try {
         const apiUrl = `${config.comfyuiUrl}${config.apiEndpoint}`;
-        console.log('Generating image with prompt:', prompt);
+        console.error('Generating image with prompt:', prompt);
         if (negativePrompt) {
-            console.log('Negative prompt:', negativePrompt);
+            console.error('Negative prompt:', negativePrompt);
         }
-        console.log('Using model:', modelName);
-        console.log('Dimensions:', width, 'x', height);
+        console.error('Using model:', modelName);
+        console.error('Dimensions:', width, 'x', height);
 
         // Check available models
-        console.log('Checking available models...');
+        console.error('Checking available models...');
         const models = await getAvailableModels();
         const availableModels = Object.keys(models);
-        console.log('Available models:', availableModels);
+        console.error('Available models:', availableModels);
 
         if (!modelName) {
             modelName = "dreamshaper_8.safetensors";
@@ -131,53 +132,57 @@ async function generateImage(prompt, negativePrompt, modelName, width, height) {
         
         // Create and validate the workflow
         const workflow = createWorkflow(prompt, negativePrompt, modelName, width, height);
-        console.log('Validating workflow...');
+        console.error('Validating workflow...');
         const validationResult = await validateWorkflow(workflow);
-        console.log('Workflow validation successful:', validationResult);
+        console.error('Workflow validation successful:', validationResult);
 
         // Queue the prompt
-        console.log('Sending workflow to ComfyUI...');
+        console.error('Sending workflow to ComfyUI...');
         const queueResponse = await axios.post(`${apiUrl}/prompt`, workflow, {
             timeout: config.timeout
         });
         const promptId = queueResponse.data.prompt_id;
-        console.log('Prompt queued with ID:', promptId);
+        console.error('Prompt queued with ID:', promptId);
 
         // Poll for completion and image
-        console.log('Waiting for generation to complete...');
+        console.error('Waiting for generation to complete...');
         const startTime = Date.now();
         let imageFound = false;
 
         while (!imageFound && Date.now() - startTime < config.timeout) {
             try {
-                console.log('Checking history...');
+                console.error('Checking history...');
                 const historyResponse = await axios.get(`${apiUrl}/history/${promptId}`);
                 const history = historyResponse.data;
                 
                 if (history[promptId] && history[promptId].outputs) {
                     const outputs = history[promptId].outputs;
-                    console.log('Outputs found:', Object.keys(outputs));
+                    console.error('Outputs found:', Object.keys(outputs));
                     
                     for (const nodeId in outputs) {
                         const nodeOutput = outputs[nodeId];
                         if (nodeOutput.images && nodeOutput.images.length > 0) {
                             const image = nodeOutput.images[0];
-                            console.log('Found image:', image.filename);
+                            console.error('Found image:', image.filename);
                             
                             // Try to get the image
                             try {
-                                console.log('Fetching image from:', `${apiUrl}/view?filename=${image.filename}`);
+                                console.error('Fetching image from:', `${apiUrl}/view?filename=${image.filename}`);
                                 const imageResponse = await axios.get(`${apiUrl}/view?filename=${image.filename}`, {
                                     responseType: 'arraybuffer'
                                 });
                                 
                                 // Save the image
                                 const imageBuffer = Buffer.from(imageResponse.data);
-                                const outputPath = path.join(config.outputDir, 'generated.png');
+                                
+                                // Use survival directory if areaId is provided
+                                const outputDir = areaId ? config.survivalDir : config.outputDir;
+                                const filename = areaId ? `area_${areaId}.png` : 'generated.png';
+                                const outputPath = path.join(outputDir, filename);
                                 
                                 // Ensure the output directory exists
-                                if (!fs.existsSync(config.outputDir)) {
-                                    fs.mkdirSync(config.outputDir, { recursive: true });
+                                if (!fs.existsSync(outputDir)) {
+                                    fs.mkdirSync(outputDir, { recursive: true });
                                 }
                                 
                                 // Delete the previous image if it exists
@@ -186,16 +191,20 @@ async function generateImage(prompt, negativePrompt, modelName, width, height) {
                                 }
                                 
                                 fs.writeFileSync(outputPath, imageBuffer);
-                                console.log('Image saved to:', outputPath);
+                                console.error('Image saved to:', outputPath);
+                                
+                                // Output only the relative path to stdout
+                                const relativePath = areaId ? `/survival/area_${areaId}.png` : '/images/generated.png';
+                                process.stdout.write(relativePath + '\n');
                                 return outputPath;
                             } catch (error) {
-                                console.log('Image not available yet, waiting...');
+                                console.error('Image not available yet, waiting...');
                             }
                         }
                     }
                 }
                 
-                console.log('Waiting for image...');
+                console.error('Waiting for image...');
                 await new Promise(resolve => setTimeout(resolve, config.pollInterval));
             } catch (error) {
                 console.error('Error checking history:', error.message);
@@ -220,15 +229,16 @@ const negativePrompt = args[1];
 const modelName = args[2];
 const width = parseInt(args[3]) || 448;
 const height = parseInt(args[4]) || 640;
+const areaId = args[5] || null;
 
 if (!prompt) {
     console.error('Please provide a prompt as a command line argument');
-    console.error('Usage: node generate-image.js "your prompt here" ["negative prompt"] ["model name"] [width] [height]');
+    console.error('Usage: node generate-image.js "your prompt here" ["negative prompt"] ["model name"] [width] [height] [areaId]');
     process.exit(1);
 }
 
 // Run the generation
-generateImage(prompt, negativePrompt, modelName, width, height)
+generateImage(prompt, negativePrompt, modelName, width, height, areaId)
     .then(() => process.exit(0))
     .catch(error => {
         console.error('Error:', error.message);
