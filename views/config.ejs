@@ -140,13 +140,17 @@
         document.getElementById('comfyuiForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const url = document.getElementById('comfyuiUrl').value;
+            const defaultModel = document.getElementById('defaultModel').value;
+            const defaultWidth = document.getElementById('defaultWidth').value;
+            const defaultHeight = document.getElementById('defaultHeight').value;
             const resultDiv = document.getElementById('comfyuiResult');
             
             resultDiv.className = 'test-result loading';
             resultDiv.textContent = 'Testing connection...';
             
             try {
-                const response = await fetch('/api/config/test-comfyui', {
+                // First test the connection
+                const testResponse = await fetch('/api/config/test-comfyui', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -154,14 +158,37 @@
                     body: JSON.stringify({ url })
                 });
                 
-                const data = await response.json();
+                const testData = await testResponse.json();
                 
-                if (data.success) {
-                    resultDiv.className = 'test-result success';
-                    resultDiv.textContent = 'Connection successful! Available models: ' + data.models.join(', ');
-                    document.getElementById('comfyuiEnv').textContent = url + '/api';
+                if (testData.success) {
+                    // If test successful, save the configuration
+                    const saveResponse = await fetch('/api/config/save', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            comfyuiUrl: url,
+                            defaultModel: defaultModel,
+                            defaultWidth: parseInt(defaultWidth),
+                            defaultHeight: parseInt(defaultHeight)
+                        })
+                    });
+                    
+                    const saveData = await saveResponse.json();
+                    
+                    if (saveData.success) {
+                        resultDiv.className = 'test-result success';
+                        resultDiv.textContent = 'Configuration saved successfully! Available models: ' + testData.models.join(', ');
+                        document.getElementById('comfyuiEnv').textContent = url + '/api';
+                        
+                        // Reload the page to show updated configuration
+                        window.location.reload();
+                    } else {
+                        throw new Error(saveData.error || 'Failed to save configuration');
+                    }
                 } else {
-                    throw new Error(data.error || 'Connection failed');
+                    throw new Error(testData.error || 'Connection failed');
                 }
             } catch (error) {
                 resultDiv.className = 'test-result error';
@@ -180,7 +207,8 @@
             resultDiv.textContent = 'Testing connection...';
             
             try {
-                const response = await fetch('/api/config/test-ollama', {
+                // First test the connection
+                const testResponse = await fetch('/api/config/test-ollama', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -188,27 +216,48 @@
                     body: JSON.stringify({ url })
                 });
                 
-                const data = await response.json();
+                const testData = await testResponse.json();
                 
-                if (data.success) {
-                    resultDiv.className = 'test-result success';
-                    resultDiv.textContent = 'Connection successful! Available models: ' + data.models.join(', ');
-                    document.getElementById('ollamaEnv').textContent = url;
-                    
-                    // Update model dropdown
-                    const modelSelect = document.getElementById('defaultOllamaModel');
-                    modelSelect.innerHTML = '';
-                    data.models.forEach(model => {
-                        const option = document.createElement('option');
-                        option.value = model;
-                        option.textContent = model;
-                        if (model === defaultModel) {
-                            option.selected = true;
-                        }
-                        modelSelect.appendChild(option);
+                if (testData.success) {
+                    // If test successful, save the configuration
+                    const saveResponse = await fetch('/api/config/save', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            ollamaUrl: url,
+                            defaultOllamaModel: defaultModel
+                        })
                     });
+                    
+                    const saveData = await saveResponse.json();
+                    
+                    if (saveData.success) {
+                        resultDiv.className = 'test-result success';
+                        resultDiv.textContent = 'Configuration saved successfully! Available models: ' + testData.models.join(', ');
+                        document.getElementById('ollamaEnv').textContent = url;
+                        
+                        // Update model dropdown
+                        const modelSelect = document.getElementById('defaultOllamaModel');
+                        modelSelect.innerHTML = '';
+                        testData.models.forEach(model => {
+                            const option = document.createElement('option');
+                            option.value = model;
+                            option.textContent = model;
+                            if (model === defaultModel) {
+                                option.selected = true;
+                            }
+                            modelSelect.appendChild(option);
+                        });
+                        
+                        // Reload the page to show updated configuration
+                        window.location.reload();
+                    } else {
+                        throw new Error(saveData.error || 'Failed to save configuration');
+                    }
                 } else {
-                    throw new Error(data.error || 'Connection failed');
+                    throw new Error(testData.error || 'Connection failed');
                 }
             } catch (error) {
                 resultDiv.className = 'test-result error';
@@ -249,69 +298,6 @@
                 resultDiv.className = 'test-result error';
                 resultDiv.textContent = 'Error: ' + error.message;
                 instructionsDiv.style.display = 'block';
-            }
-        });
-
-        // Save configuration
-        document.getElementById('saveConfig').addEventListener('click', async () => {
-            const comfyuiUrl = document.getElementById('comfyuiUrl').value;
-            const ollamaUrl = document.getElementById('ollamaUrl').value;
-            const defaultModel = document.getElementById('defaultModel').value;
-            const defaultOllamaModel = document.getElementById('defaultOllamaModel').value;
-            const defaultWidth = document.getElementById('defaultWidth').value;
-            const defaultHeight = document.getElementById('defaultHeight').value;
-
-            try {
-                const response = await fetch('/api/config/save', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        comfyuiUrl,
-                        ollamaUrl,
-                        defaultModel,
-                        defaultOllamaModel,
-                        defaultWidth,
-                        defaultHeight
-                    })
-                });
-
-                const data = await response.json();
-                if (data.success) {
-                    alert('Configuration saved successfully!');
-                    // Update model dropdowns with latest available models
-                    if (data.models) {
-                        const modelSelect = document.getElementById('defaultModel');
-                        modelSelect.innerHTML = '';
-                        data.models.forEach(model => {
-                            const option = document.createElement('option');
-                            option.value = model;
-                            option.textContent = model;
-                            if (model === defaultModel) {
-                                option.selected = true;
-                            }
-                            modelSelect.appendChild(option);
-                        });
-                    }
-                    if (data.ollamaModels) {
-                        const modelSelect = document.getElementById('defaultOllamaModel');
-                        modelSelect.innerHTML = '';
-                        data.ollamaModels.forEach(model => {
-                            const option = document.createElement('option');
-                            option.value = model;
-                            option.textContent = model;
-                            if (model === defaultOllamaModel) {
-                                option.selected = true;
-                            }
-                            modelSelect.appendChild(option);
-                        });
-                    }
-                } else {
-                    alert('Error saving configuration: ' + data.error);
-                }
-            } catch (error) {
-                alert('Error saving configuration: ' + error.message);
             }
         });
     </script>

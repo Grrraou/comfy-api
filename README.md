@@ -7,6 +7,7 @@ A comprehensive web interface for interacting with local AI services, including 
 - **Image Generation**: Generate images using ComfyUI with customizable prompts and models
 - **Background Removal**: Remove backgrounds from images using the Rembg node
 - **AI-Powered Prompt Generation**: Generate and enhance prompts using Ollama
+- **Infinite Adventure**: Create and explore AI-generated worlds with persistent state
 - **Configuration Management**: Easy setup and testing of AI service endpoints
 - **Node Testing**: Verify the presence and functionality of required ComfyUI nodes
 - **Web UI**: User-friendly interface for all operations
@@ -31,7 +32,8 @@ A comprehensive web interface for interacting with local AI services, including 
 │   ├── config.ejs      # Configuration page
 │   ├── free-prompt.ejs # Free prompt generation page
 │   ├── prompt-builder.ejs # Character builder page
-│   └── remove-background.ejs # Background removal page
+│   ├── remove-background.ejs # Background removal page
+│   └── infinite-adventure.ejs # Infinite Adventure page
 └── public/             # Static files
     └── images/         # Generated images
 ```
@@ -66,6 +68,14 @@ A comprehensive web interface for interacting with local AI services, including 
 - Character builder with customizable attributes
 - Free prompt generation with AI assistance
 - Conversation history for context
+
+### Infinite Adventure
+- Create and explore AI-generated worlds
+- Persistent world state across sessions
+- Customizable world and character descriptions
+- Multi-language support for narration
+- Dynamic scene generation with AI
+- Interactive narrative progression
 
 ### Configuration Management
 - Configure ComfyUI and Ollama endpoints
@@ -144,6 +154,12 @@ make clean
    - Ensure Ollama is running and accessible
    - Check the configuration page for connection status
    - Verify the Ollama URL in the configuration
+
+4. **Infinite Adventure Issues**
+   - Ensure both ComfyUI and Ollama are properly configured
+   - Check that the selected language is supported
+   - Verify that world and character descriptions are provided
+   - Clear browser cache if world state becomes corrupted
 
 ## License
 

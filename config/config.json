@@ -1,0 +1,8 @@
+{
+  "comfyuiUrl": "http://host.docker.internal:8188",
+  "ollamaUrl": "http://host.docker.internal:11434",
+  "defaultModel": "dreamshaper_8.safetensors",
+  "defaultOllamaModel": "mistral:latest",
+  "defaultWidth": 1024,
+  "defaultHeight": 576
+}

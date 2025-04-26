@@ -18,28 +18,63 @@ const config = {
     defaultOllamaModel: process.env.DEFAULT_OLLAMA_MODEL || null // Will be set to first available model
 };
 
-// Load configuration from file if it exists
-try {
-    const configFile = path.join(__dirname, 'config.json');
-    if (fs.existsSync(configFile)) {
-        const savedConfig = JSON.parse(fs.readFileSync(configFile, 'utf8'));
-        Object.assign(config, savedConfig);
-    }
-} catch (error) {
-    console.error('Error loading config file:', error);
+// Ensure config directory exists
+const configDir = path.join(__dirname, 'config');
+if (!fs.existsSync(configDir)) {
+    fs.mkdirSync(configDir, { recursive: true });
 }
 
 // Save configuration to file
 function saveConfig(newConfig) {
     try {
-        const configFile = path.join(__dirname, 'config.json');
-        fs.writeFileSync(configFile, JSON.stringify(newConfig, null, 2));
-        Object.assign(config, newConfig);
+        const configFile = path.join(configDir, 'config.json');
+        // Ensure all required fields are present and valid
+        const completeConfig = {
+            comfyuiUrl: newConfig.comfyuiUrl || config.comfyuiUrl,
+            ollamaUrl: newConfig.ollamaUrl || config.ollamaUrl,
+            defaultModel: newConfig.defaultModel || config.defaultModel,
+            defaultOllamaModel: newConfig.defaultOllamaModel || config.defaultOllamaModel,
+            defaultWidth: parseInt(newConfig.defaultWidth) || config.defaultWidth,
+            defaultHeight: parseInt(newConfig.defaultHeight) || config.defaultHeight
+        };
+
+        // Write to config file
+        fs.writeFileSync(configFile, JSON.stringify(completeConfig, null, 2));
+        
+        // Update in-memory config
+        Object.assign(config, completeConfig);
+        
+        // Log the saved configuration
+        console.log('Configuration saved to:', configFile);
+        console.log('Configuration content:', completeConfig);
+        
         return true;
     } catch (error) {
         console.error('Error saving config file:', error);
         return false;
     }
+}
+
+// Load configuration from file if it exists
+try {
+    const configFile = path.join(configDir, 'config.json');
+    if (fs.existsSync(configFile)) {
+        const savedConfig = JSON.parse(fs.readFileSync(configFile, 'utf8'));
+        console.log('Loading saved configuration from:', configFile);
+        console.log('Configuration content:', savedConfig);
+        
+        // Update config with saved values
+        if (savedConfig.comfyuiUrl) config.comfyuiUrl = savedConfig.comfyuiUrl;
+        if (savedConfig.ollamaUrl) config.ollamaUrl = savedConfig.ollamaUrl;
+        if (savedConfig.defaultModel) config.defaultModel = savedConfig.defaultModel;
+        if (savedConfig.defaultOllamaModel) config.defaultOllamaModel = savedConfig.defaultOllamaModel;
+        if (savedConfig.defaultWidth) config.defaultWidth = parseInt(savedConfig.defaultWidth);
+        if (savedConfig.defaultHeight) config.defaultHeight = parseInt(savedConfig.defaultHeight);
+        
+        console.log('Current configuration:', config);
+    }
+} catch (error) {
+    console.error('Error loading config file:', error);
 }
 
 // Configure multer for file uploads
@@ -550,18 +585,28 @@ app.get('/api/ollama/models', async (req, res) => {
 
 // Configuration routes
 app.get('/config', async (req, res) => {
-    const models = await getAvailableModels();
-    const ollamaModels = await getAvailableOllamaModels();
-    res.render('config', {
-        comfyuiUrl: config.comfyuiUrl,
-        ollamaUrl: config.ollamaUrl,
-        models: models,
-        ollamaModels: ollamaModels,
-        defaultModel: config.defaultModel,
-        defaultOllamaModel: config.defaultOllamaModel,
-        defaultWidth: config.defaultWidth,
-        defaultHeight: config.defaultHeight
-    });
+    try {
+        // Get available models
+        const models = await getAvailableModels();
+        const ollamaModels = await getAvailableOllamaModels();
+        
+        // Log current configuration
+        console.log('Current configuration for /config route:', config);
+        
+        res.render('config', {
+            comfyuiUrl: config.comfyuiUrl,
+            ollamaUrl: config.ollamaUrl,
+            models: models,
+            ollamaModels: ollamaModels,
+            defaultModel: config.defaultModel,
+            defaultOllamaModel: config.defaultOllamaModel,
+            defaultWidth: config.defaultWidth,
+            defaultHeight: config.defaultHeight
+        });
+    } catch (error) {
+        console.error('Error in /config route:', error);
+        res.status(500).send('Error loading configuration page');
+    }
 });
 
 // Save configuration endpoint
@@ -569,40 +614,74 @@ app.post('/api/config/save', express.json(), async (req, res) => {
     try {
         const { comfyuiUrl, ollamaUrl, defaultModel, defaultOllamaModel, defaultWidth, defaultHeight } = req.body;
         
-        // Test ComfyUI connection
-        const comfyuiResponse = await axios.get(`${comfyuiUrl}/object_info`);
-        const comfyuiModels = [];
-        const checkpointNode = comfyuiResponse.data.CheckpointLoaderSimple;
-        if (checkpointNode && checkpointNode.input && checkpointNode.input.required) {
-            const ckptName = checkpointNode.input.required.ckpt_name;
-            if (ckptName && ckptName[0] && ckptName[0].length > 0) {
-                comfyuiModels.push(...ckptName[0]);
-            }
-        }
-        
-        // Test Ollama connection
-        const ollamaResponse = await axios.get(`${ollamaUrl}/api/tags`);
-        const ollamaModels = ollamaResponse.data.models.map(model => model.name);
-        
-        // Validate models
-        if (!comfyuiModels.includes(defaultModel)) {
-            return res.json({ success: false, error: 'Invalid ComfyUI model selected' });
-        }
-        
-        if (!ollamaModels.includes(defaultOllamaModel)) {
-            return res.json({ success: false, error: 'Invalid Ollama model selected' });
-        }
-        
-        const newConfig = {
+        console.log('Received configuration to save:', {
             comfyuiUrl,
             ollamaUrl,
             defaultModel,
             defaultOllamaModel,
-            defaultWidth: parseInt(defaultWidth),
-            defaultHeight: parseInt(defaultHeight)
+            defaultWidth,
+            defaultHeight
+        });
+        
+        let comfyuiModels = [];
+        let ollamaModels = [];
+        
+        // Only test ComfyUI if its configuration is being updated
+        if (comfyuiUrl && defaultModel) {
+            try {
+                const comfyuiResponse = await axios.get(`${comfyuiUrl}/object_info`);
+                const checkpointNode = comfyuiResponse.data.CheckpointLoaderSimple;
+                if (checkpointNode && checkpointNode.input && checkpointNode.input.required) {
+                    const ckptName = checkpointNode.input.required.ckpt_name;
+                    if (ckptName && ckptName[0] && ckptName[0].length > 0) {
+                        comfyuiModels.push(...ckptName[0]);
+                    }
+                }
+                
+                // Validate ComfyUI model
+                if (!comfyuiModels.includes(defaultModel)) {
+                    return res.json({ success: false, error: 'Invalid ComfyUI model selected' });
+                }
+            } catch (error) {
+                return res.json({ success: false, error: 'Failed to connect to ComfyUI: ' + error.message });
+            }
+        }
+        
+        // Only test Ollama if its configuration is being updated
+        if (ollamaUrl && defaultOllamaModel) {
+            try {
+                const ollamaResponse = await axios.get(`${ollamaUrl}/api/tags`);
+                ollamaModels = ollamaResponse.data.models.map(model => model.name);
+                
+                // Validate Ollama model
+                if (!ollamaModels.includes(defaultOllamaModel)) {
+                    return res.json({ success: false, error: 'Invalid Ollama model selected' });
+                }
+            } catch (error) {
+                return res.json({ success: false, error: 'Failed to connect to Ollama: ' + error.message });
+            }
+        }
+        
+        // Prepare new configuration
+        const newConfig = {
+            comfyuiUrl: comfyuiUrl || config.comfyuiUrl,
+            ollamaUrl: ollamaUrl || config.ollamaUrl,
+            defaultModel: defaultModel || config.defaultModel,
+            defaultOllamaModel: defaultOllamaModel || config.defaultOllamaModel,
+            defaultWidth: parseInt(defaultWidth) || config.defaultWidth,
+            defaultHeight: parseInt(defaultHeight) || config.defaultHeight
         };
         
+        console.log('Saving new configuration:', newConfig);
+        
         if (saveConfig(newConfig)) {
+            // Verify the configuration was saved
+            const savedConfig = JSON.parse(fs.readFileSync(path.join(configDir, 'config.json'), 'utf8'));
+            console.log('Verified saved configuration:', savedConfig);
+            
+            // Update the in-memory config
+            Object.assign(config, savedConfig);
+            
             res.json({ 
                 success: true,
                 models: comfyuiModels,
@@ -683,6 +762,8 @@ app.get('/api/config', async (req, res) => {
         // Get available models
         const models = await getAvailableModels();
         const ollamaModels = await getAvailableOllamaModels();
+        
+        console.log('Current configuration for /api/config:', config);
         
         res.json({
             ...config,
