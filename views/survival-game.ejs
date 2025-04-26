@@ -509,9 +509,22 @@
             z-index: 2;
         }
 
-        .npc {
+        .npc-wrapper {
+            position: relative;
             width: 80px;
             height: 80px;
+            transition: all 0.3s ease;
+            z-index: 1;
+        }
+
+        .npc-wrapper:hover {
+            transform: scale(4);
+            z-index: 100;
+        }
+
+        .npc {
+            width: 100%;
+            height: 100%;
             border-radius: 50%;
             border: 2px solid #ff6b6b;
             overflow: hidden;
@@ -522,8 +535,6 @@
         }
 
         .npc:hover {
-            transform: scale(4);
-            z-index: 10;
             box-shadow: 0 0 20px rgba(255, 107, 107, 0.5);
         }
 
@@ -536,6 +547,69 @@
 
         .npc:hover img {
             transform: scale(1.1);
+        }
+
+        .npc-actions {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            display: none;
+            z-index: 101;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+
+        .npc-wrapper:hover .npc-actions,
+        .npc-actions:hover {
+            display: block;
+        }
+
+        .npc-action-button {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            border: none;
+            background-color: #2a2a2a;
+            color: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            position: absolute;
+            pointer-events: auto;
+        }
+
+        .npc-action-button:hover {
+            background-color: #ff6b6b;
+            transform: scale(1.2);
+        }
+
+        .npc-action-button.regen {
+            top: -30px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .npc-action-button.talk {
+            top: 50%;
+            right: -30px;
+            transform: translateY(-50%);
+        }
+
+        .npc-action-button.trade {
+            bottom: -30px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .npc-action-button.fight {
+            top: 50%;
+            left: -30px;
+            transform: translateY(-50%);
         }
 
         .npc-modal {
@@ -906,6 +980,325 @@
     </div>
 
     <script>
+        // Add config to window object
+        window.config = {
+            defaultOllamaModel: '<%= defaultOllamaModel %>'
+        };
+
+        // Define utility functions in the global scope
+        window.loadGameState = function() {
+            try {
+                const savedState = localStorage.getItem('survivalGameState');
+                if (savedState) {
+                    const parsed = JSON.parse(savedState);
+                    // Initialize Maps from saved data
+                    const visitedLocations = new Map(Object.entries(parsed.visitedLocations || {}));
+                    const discoveredAreas = new Map(Object.entries(parsed.discoveredAreas || {}));
+                    const areaConnections = new Map(Object.entries(parsed.areaConnections || {}));
+                    const linkPositions = new Map(Object.entries(parsed.linkPositions || {}));
+                    const areaNPCs = new Map(Object.entries(parsed.areaNPCs || {}));
+                    
+                    return {
+                        currentLocation: parsed.currentLocation || null,
+                        visitedLocations,
+                        discoveredAreas,
+                        areaConnections,
+                        linkPositions,
+                        areaNPCs,
+                        nextAreaId: parsed.nextAreaId || 1,
+                        nextNPCId: parsed.nextNPCId || 1,
+                        daysSurvived: parsed.daysSurvived || 0,
+                        currentTime: parsed.currentTime || { hours: 8, minutes: 0 },
+                        maxLinkedAreas: new Map(Object.entries(parsed.maxLinkedAreas || {})),
+                        worldDescription: parsed.worldDescription || 'A world ravaged by disaster, where survival is a daily struggle. The environment is harsh, resources are scarce, and danger lurks around every corner.',
+                        stats: parsed.stats || {
+                            health: 100,
+                            hunger: 100,
+                            thirst: 100,
+                            stamina: 100
+                        }
+                    };
+                }
+            } catch (error) {
+                console.error('Error loading game state:', error);
+            }
+            
+            // Return default state if loading fails
+            return {
+                currentLocation: null,
+                visitedLocations: new Map(),
+                discoveredAreas: new Map(),
+                areaConnections: new Map(),
+                linkPositions: new Map(),
+                areaNPCs: new Map(),
+                nextAreaId: 1,
+                nextNPCId: 1,
+                daysSurvived: 0,
+                currentTime: { hours: 8, minutes: 0 },
+                maxLinkedAreas: new Map(),
+                worldDescription: 'A world ravaged by disaster, where survival is a daily struggle. The environment is harsh, resources are scarce, and danger lurks around every corner.',
+                stats: {
+                    health: 100,
+                    hunger: 100,
+                    thirst: 100,
+                    stamina: 100
+                }
+            };
+        };
+
+        window.saveGameState = function(gameData) {
+            try {
+                // Convert Maps to Objects for storage
+                const visitedLocationsObj = gameData.visitedLocations.size > 0 
+                    ? Object.fromEntries(gameData.visitedLocations) 
+                    : {};
+                const discoveredAreasObj = gameData.discoveredAreas.size > 0 
+                    ? Object.fromEntries(gameData.discoveredAreas) 
+                    : {};
+                const areaConnectionsObj = gameData.areaConnections.size > 0
+                    ? Object.fromEntries(gameData.areaConnections)
+                    : {};
+                const linkPositionsObj = gameData.linkPositions.size > 0
+                    ? Object.fromEntries(gameData.linkPositions)
+                    : {};
+                const maxLinkedAreasObj = gameData.maxLinkedAreas.size > 0
+                    ? Object.fromEntries(gameData.maxLinkedAreas)
+                    : {};
+                const areaNPCsObj = gameData.areaNPCs.size > 0
+                    ? Object.fromEntries(gameData.areaNPCs)
+                    : {};
+
+                // Create the state object
+                const stateToSave = {
+                    currentLocation: gameData.currentLocation,
+                    visitedLocations: visitedLocationsObj,
+                    discoveredAreas: discoveredAreasObj,
+                    areaConnections: areaConnectionsObj,
+                    linkPositions: linkPositionsObj,
+                    areaNPCs: areaNPCsObj,
+                    nextAreaId: gameData.nextAreaId,
+                    nextNPCId: gameData.nextNPCId,
+                    daysSurvived: gameData.daysSurvived,
+                    currentTime: gameData.currentTime,
+                    maxLinkedAreas: maxLinkedAreasObj,
+                    worldDescription: gameData.worldDescription,
+                    stats: gameData.stats
+                };
+
+                // Save to localStorage
+                localStorage.setItem('survivalGameState', JSON.stringify(stateToSave));
+            } catch (error) {
+                console.error('Error saving game state:', error);
+            }
+        };
+
+        window.showLoading = function(message, description) {
+            const loadingMessage = document.getElementById('loadingMessage');
+            const loadingDescription = document.getElementById('loadingDescription');
+            const loadingOverlay = document.getElementById('loadingOverlay');
+            
+            loadingMessage.textContent = message;
+            loadingDescription.textContent = description;
+            loadingOverlay.style.display = 'flex';
+        };
+
+        window.hideLoading = function() {
+            const loadingOverlay = document.getElementById('loadingOverlay');
+            loadingOverlay.style.display = 'none';
+        };
+
+        window.showNothingFound = function(message) {
+            const gameState = document.getElementById('gameState');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'nothing-found';
+            messageDiv.textContent = message;
+            gameState.appendChild(messageDiv);
+            setTimeout(() => {
+                messageDiv.remove();
+            }, 3000);
+        };
+
+        window.displayNPCs = function() {
+            const npcContainer = document.getElementById('npcContainer');
+            npcContainer.innerHTML = '';
+
+            const gameData = window.loadGameState();
+            const currentNPCs = gameData.areaNPCs.get(gameData.currentLocation.title) || [];
+            currentNPCs.forEach(npc => {
+                const npcWrapper = document.createElement('div');
+                npcWrapper.className = 'npc-wrapper';
+                
+                const npcElement = document.createElement('div');
+                npcElement.className = 'npc';
+                npcElement.innerHTML = `<img src="${npc.imageUrl}" alt="${npc.data.name}">`;
+                npcElement.onclick = (e) => {
+                    if (!e.target.closest('.npc-action-button')) {
+                        window.showNPCDetails(npc);
+                    }
+                };
+                
+                const actionsDiv = document.createElement('div');
+                actionsDiv.className = 'npc-actions';
+                actionsDiv.innerHTML = `
+                    <button class="npc-action-button regen" title="Regenerate Image" onclick="regenerateNPCImage(event, ${npc.id})">⟳</button>
+                    <button class="npc-action-button talk" title="Talk" onclick="talkToNPC(event, ${npc.id})">💬</button>
+                    <button class="npc-action-button trade" title="Trade" onclick="tradeWithNPC(event, ${npc.id})">🔄</button>
+                    <button class="npc-action-button fight" title="Fight" onclick="fightNPC(event, ${npc.id})">⚔️</button>
+                `;
+                
+                npcWrapper.appendChild(npcElement);
+                npcWrapper.appendChild(actionsDiv);
+                npcContainer.appendChild(npcWrapper);
+            });
+        };
+
+        window.showNPCDetails = function(npc) {
+            const modal = document.getElementById('npcModal');
+            const modalImage = modal.querySelector('.npc-modal-image img');
+            const modalName = modal.querySelector('.npc-modal-name');
+            const modalDescription = modal.querySelector('.npc-modal-description');
+            const modalAttributes = modal.querySelector('.npc-modal-attributes');
+            const modalBackground = modal.querySelector('.npc-modal-background');
+            const modalAdditional = modal.querySelector('.npc-modal-additional');
+
+            modalImage.src = npc.imageUrl;
+            modalImage.alt = npc.data.name;
+            modalName.textContent = npc.data.name;
+            modalDescription.textContent = npc.data.description;
+
+            // Clear previous attributes
+            modalAttributes.innerHTML = '';
+
+            // Add attributes
+            Object.entries(npc.data.attributes).forEach(([key, value]) => {
+                const attributeDiv = document.createElement('div');
+                attributeDiv.className = 'npc-modal-attribute';
+                attributeDiv.innerHTML = `
+                    <div class="npc-modal-attribute-label">${key}</div>
+                    <div class="npc-modal-attribute-value">${value}</div>
+                `;
+                modalAttributes.appendChild(attributeDiv);
+            });
+
+            modalBackground.textContent = npc.data.background;
+            modalAdditional.textContent = npc.data.additionalDetails;
+
+            modal.style.display = 'flex';
+        };
+
+        // Define NPC action functions in the global scope
+        window.regenerateNPCImage = async function(event, npcId) {
+            event.stopPropagation();
+            try {
+                const gameData = window.loadGameState();
+                window.showLoading('Regenerating NPC Image', 'Creating a new visual representation of the survivor...');
+                
+                // Find the NPC in the current area
+                const currentNPCs = gameData.areaNPCs.get(gameData.currentLocation.title) || [];
+                const npcIndex = currentNPCs.findIndex(n => n.id === npcId);
+                
+                if (npcIndex === -1) {
+                    throw new Error('NPC not found');
+                }
+
+                const npc = currentNPCs[npcIndex];
+
+                // Generate new image
+                const npcImageResponse = await fetch('/api/generate-image', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        prompt: `post-apocalyptic survivor, ${npc.data.name}, ${npc.data.description}, ${npc.data.attributes.clothing}, detailed portrait, realistic style`,
+                        areaId: `npc_${npcId}`,
+                        width: 576,
+                        height: 1024
+                    })
+                });
+
+                if (!npcImageResponse.ok) {
+                    throw new Error('Failed to generate NPC image');
+                }
+
+                const imageData = await npcImageResponse.json();
+                if (!imageData.success) {
+                    throw new Error(imageData.error || 'Failed to generate image');
+                }
+
+                // Update NPC image URL with timestamp to prevent caching
+                const timestamp = new Date().getTime();
+                const newImageUrl = (imageData.imageUrl.startsWith('/') ? imageData.imageUrl : `/${imageData.imageUrl}`) + `?t=${timestamp}`;
+                
+                // Update the NPC in the current area's NPCs array
+                currentNPCs[npcIndex] = {
+                    ...npc,
+                    imageUrl: newImageUrl
+                };
+                
+                // Update the areaNPCs map
+                gameData.areaNPCs.set(gameData.currentLocation.title, currentNPCs);
+                
+                // Save the updated game state
+                window.saveGameState(gameData);
+                
+                // Re-render the NPC container to ensure all images are properly updated
+                const npcContainer = document.getElementById('npcContainer');
+                const currentNPCsList = gameData.areaNPCs.get(gameData.currentLocation.title) || [];
+                
+                npcContainer.innerHTML = '';
+                currentNPCsList.forEach(npc => {
+                    const npcWrapper = document.createElement('div');
+                    npcWrapper.className = 'npc-wrapper';
+                    
+                    const npcElement = document.createElement('div');
+                    npcElement.className = 'npc';
+                    npcElement.innerHTML = `<img src="${npc.imageUrl}" alt="${npc.data.name}">`;
+                    npcElement.onclick = (e) => {
+                        if (!e.target.closest('.npc-action-button')) {
+                            window.showNPCDetails(npc);
+                        }
+                    };
+                    
+                    const actionsDiv = document.createElement('div');
+                    actionsDiv.className = 'npc-actions';
+                    actionsDiv.innerHTML = `
+                        <button class="npc-action-button regen" title="Regenerate Image" onclick="regenerateNPCImage(event, ${npc.id})">⟳</button>
+                        <button class="npc-action-button talk" title="Talk" onclick="talkToNPC(event, ${npc.id})">💬</button>
+                        <button class="npc-action-button trade" title="Trade" onclick="tradeWithNPC(event, ${npc.id})">🔄</button>
+                        <button class="npc-action-button fight" title="Fight" onclick="fightNPC(event, ${npc.id})">⚔️</button>
+                    `;
+                    
+                    npcWrapper.appendChild(npcElement);
+                    npcWrapper.appendChild(actionsDiv);
+                    npcContainer.appendChild(npcWrapper);
+                });
+                
+                window.hideLoading();
+                window.showNothingFound(`Regenerated image for ${npc.data.name}`);
+
+            } catch (error) {
+                console.error('Error regenerating NPC image:', error);
+                window.hideLoading();
+                window.showNothingFound(`Error: ${error.message}`);
+            }
+        };
+
+        window.talkToNPC = function(event, npcId) {
+            event.stopPropagation();
+            window.showNothingFound('Talking to NPCs is not implemented yet');
+        };
+
+        window.tradeWithNPC = function(event, npcId) {
+            event.stopPropagation();
+            window.showNothingFound('Trading with NPCs is not implemented yet');
+        };
+
+        window.fightNPC = function(event, npcId) {
+            event.stopPropagation();
+            window.showNothingFound('Fighting NPCs is not implemented yet');
+        };
+
         document.addEventListener('DOMContentLoaded', () => {
             const startButton = document.getElementById('startButton');
             const resetButton = document.getElementById('resetButton');
@@ -941,119 +1334,13 @@
             const mainContent = document.querySelector('.main-content');
 
             // Load game state from localStorage
-            let gameData = loadGameState();
+            let gameData = window.loadGameState();
 
             // If there's saved game state, show the game screen
             if (gameData.currentLocation) {
                 startScreen.style.display = 'none';
                 gameState.style.display = 'block';
                 displayCurrentLocation();
-            }
-
-            function loadGameState() {
-                try {
-                    const savedState = localStorage.getItem('survivalGameState');
-                    if (savedState) {
-                        const parsed = JSON.parse(savedState);
-                        // Initialize Maps from saved data
-                        const visitedLocations = new Map(Object.entries(parsed.visitedLocations || {}));
-                        const discoveredAreas = new Map(Object.entries(parsed.discoveredAreas || {}));
-                        const areaConnections = new Map(Object.entries(parsed.areaConnections || {}));
-                        const linkPositions = new Map(Object.entries(parsed.linkPositions || {}));
-                        const areaNPCs = new Map(Object.entries(parsed.areaNPCs || {}));
-                        
-                        return {
-                            currentLocation: parsed.currentLocation || null,
-                            visitedLocations,
-                            discoveredAreas,
-                            areaConnections,
-                            linkPositions,
-                            areaNPCs,
-                            nextAreaId: parsed.nextAreaId || 1,
-                            nextNPCId: parsed.nextNPCId || 1,
-                            daysSurvived: parsed.daysSurvived || 0,
-                            currentTime: parsed.currentTime || { hours: 8, minutes: 0 },
-                            maxLinkedAreas: new Map(Object.entries(parsed.maxLinkedAreas || {})),
-                            worldDescription: parsed.worldDescription || 'A world ravaged by disaster, where survival is a daily struggle. The environment is harsh, resources are scarce, and danger lurks around every corner.',
-                            stats: parsed.stats || {
-                                health: 100,
-                                hunger: 100,
-                                thirst: 100,
-                                stamina: 100
-                            }
-                        };
-                    }
-                } catch (error) {
-                    console.error('Error loading game state:', error);
-                }
-                
-                // Return default state if loading fails
-                return {
-                    currentLocation: null,
-                    visitedLocations: new Map(),
-                    discoveredAreas: new Map(),
-                    areaConnections: new Map(),
-                    linkPositions: new Map(),
-                    areaNPCs: new Map(),
-                    nextAreaId: 1,
-                    nextNPCId: 1,
-                    daysSurvived: 0,
-                    currentTime: { hours: 8, minutes: 0 },
-                    maxLinkedAreas: new Map(),
-                    worldDescription: 'A world ravaged by disaster, where survival is a daily struggle. The environment is harsh, resources are scarce, and danger lurks around every corner.',
-                    stats: {
-                        health: 100,
-                        hunger: 100,
-                        thirst: 100,
-                        stamina: 100
-                    }
-                };
-            }
-
-            function saveGameState() {
-                try {
-                    // Convert Maps to Objects for storage
-                    const visitedLocationsObj = gameData.visitedLocations.size > 0 
-                        ? Object.fromEntries(gameData.visitedLocations) 
-                        : {};
-                    const discoveredAreasObj = gameData.discoveredAreas.size > 0 
-                        ? Object.fromEntries(gameData.discoveredAreas) 
-                        : {};
-                    const areaConnectionsObj = gameData.areaConnections.size > 0
-                        ? Object.fromEntries(gameData.areaConnections)
-                        : {};
-                    const linkPositionsObj = gameData.linkPositions.size > 0
-                        ? Object.fromEntries(gameData.linkPositions)
-                        : {};
-                    const maxLinkedAreasObj = gameData.maxLinkedAreas.size > 0
-                        ? Object.fromEntries(gameData.maxLinkedAreas)
-                        : {};
-                    const areaNPCsObj = gameData.areaNPCs.size > 0
-                        ? Object.fromEntries(gameData.areaNPCs)
-                        : {};
-
-                    // Create the state object
-                    const stateToSave = {
-                        currentLocation: gameData.currentLocation,
-                        visitedLocations: visitedLocationsObj,
-                        discoveredAreas: discoveredAreasObj,
-                        areaConnections: areaConnectionsObj,
-                        linkPositions: linkPositionsObj,
-                        areaNPCs: areaNPCsObj,
-                        nextAreaId: gameData.nextAreaId,
-                        nextNPCId: gameData.nextNPCId,
-                        daysSurvived: gameData.daysSurvived,
-                        currentTime: gameData.currentTime,
-                        maxLinkedAreas: maxLinkedAreasObj,
-                        worldDescription: gameData.worldDescription,
-                        stats: gameData.stats
-                    };
-
-                    // Save to localStorage
-                    localStorage.setItem('survivalGameState', JSON.stringify(stateToSave));
-                } catch (error) {
-                    console.error('Error saving game state:', error);
-                }
             }
 
             function formatTime(hours, minutes) {
@@ -1159,7 +1446,7 @@
 
                 // Update display
                 updateStatsDisplay();
-                saveGameState();
+                window.saveGameState(gameData);
             }
 
             function gameOver() {
@@ -1201,72 +1488,12 @@
                     if (gameData.currentLocation.imageUrl) {
                         locationImage.src = gameData.currentLocation.imageUrl;
                     }
-                    displayNPCs();
+                    window.displayNPCs();
                     updateGameStats();
                     displayDiscoveredAreas();
                     updateExploreButtonState();
                 }
             }
-
-            function displayNPCs() {
-                const npcContainer = document.getElementById('npcContainer');
-                npcContainer.innerHTML = '';
-
-                const currentNPCs = gameData.areaNPCs.get(gameData.currentLocation.title) || [];
-                currentNPCs.forEach(npc => {
-                    const npcElement = document.createElement('div');
-                    npcElement.className = 'npc';
-                    npcElement.innerHTML = `<img src="${npc.imageUrl}" alt="${npc.data.name}">`;
-                    npcElement.onclick = () => showNPCDetails(npc);
-                    npcContainer.appendChild(npcElement);
-                });
-            }
-
-            function showNPCDetails(npc) {
-                const modal = document.getElementById('npcModal');
-                const modalImage = modal.querySelector('.npc-modal-image img');
-                const modalName = modal.querySelector('.npc-modal-name');
-                const modalDescription = modal.querySelector('.npc-modal-description');
-                const modalAttributes = modal.querySelector('.npc-modal-attributes');
-                const modalBackground = modal.querySelector('.npc-modal-background');
-                const modalAdditional = modal.querySelector('.npc-modal-additional');
-
-                modalImage.src = npc.imageUrl;
-                modalImage.alt = npc.data.name;
-                modalName.textContent = npc.data.name;
-                modalDescription.textContent = npc.data.description;
-
-                // Clear previous attributes
-                modalAttributes.innerHTML = '';
-
-                // Add attributes
-                Object.entries(npc.data.attributes).forEach(([key, value]) => {
-                    const attributeDiv = document.createElement('div');
-                    attributeDiv.className = 'npc-modal-attribute';
-                    attributeDiv.innerHTML = `
-                        <div class="npc-modal-attribute-label">${key}</div>
-                        <div class="npc-modal-attribute-value">${value}</div>
-                    `;
-                    modalAttributes.appendChild(attributeDiv);
-                });
-
-                modalBackground.textContent = npc.data.background;
-                modalAdditional.textContent = npc.data.additionalDetails;
-
-                modal.style.display = 'flex';
-            }
-
-            // Close modal when clicking the close button
-            document.querySelector('.npc-modal-close').addEventListener('click', () => {
-                document.getElementById('npcModal').style.display = 'none';
-            });
-
-            // Close modal when clicking outside
-            document.getElementById('npcModal').addEventListener('click', (e) => {
-                if (e.target === document.getElementById('npcModal')) {
-                    document.getElementById('npcModal').style.display = 'none';
-                }
-            });
 
             function displayDiscoveredAreas() {
                 // Remove any existing area links
@@ -1296,7 +1523,7 @@
                         position = availableCorners.shift();
                         gameData.linkPositions.set(`${gameData.currentLocation.title}-${area.title}`, position);
                         gameData.linkPositions.set(`${area.title}-${gameData.currentLocation.title}`, position);
-                        saveGameState();
+                        window.saveGameState(gameData);
                     }
 
                     if (position) {
@@ -1321,7 +1548,7 @@
             function navigateToArea(area) {
                 // Check stamina
                 if (gameData.stats.stamina < 10) {
-                    showNothingFound('Not enough stamina to move (10 stamina required)');
+                    window.showNothingFound('Not enough stamina to move (10 stamina required)');
                     return;
                 }
 
@@ -1338,23 +1565,13 @@
                 
                 advanceTime(1); // Moving takes 1 hour
                 displayCurrentLocation();
-                saveGameState();
-            }
-
-            function showNothingFound(message) {
-                const messageDiv = document.createElement('div');
-                messageDiv.className = 'nothing-found';
-                messageDiv.textContent = message;
-                gameState.appendChild(messageDiv);
-                setTimeout(() => {
-                    messageDiv.remove();
-                }, 3000);
+                window.saveGameState(gameData);
             }
 
             exploreButton.addEventListener('click', async () => {
                 // Check stamina
                 if (gameData.stats.stamina < 20) {
-                    showNothingFound('Not enough stamina to explore (20 stamina required)');
+                    window.showNothingFound('Not enough stamina to explore (20 stamina required)');
                     return;
                 }
 
@@ -1362,7 +1579,7 @@
                 if (Math.random() < 0.6) {
                     await generateNewLocation();
                 } else {
-                    showNothingFound('You explore the area but find nothing of interest...');
+                    window.showNothingFound('You explore the area but find nothing of interest...');
                 }
                 
                 // Consume stamina
@@ -1375,14 +1592,14 @@
             searchSurvivorButton.addEventListener('click', async () => {
                 // Check stamina
                 if (gameData.stats.stamina < 20) {
-                    showNothingFound('Not enough stamina to search for survivors (20 stamina required)');
+                    window.showNothingFound('Not enough stamina to search for survivors (20 stamina required)');
                     return;
                 }
 
                 // Check if we've reached the maximum number of survivors in this area
                 const currentNPCs = gameData.areaNPCs.get(gameData.currentLocation.title) || [];
                 if (currentNPCs.length >= 2) {
-                    showNothingFound('This area already has the maximum number of survivors.');
+                    window.showNothingFound('This area already has the maximum number of survivors.');
                     return;
                 }
 
@@ -1390,7 +1607,7 @@
                 if (Math.random() < 0.6) {
                     await discoverNPC();
                 } else {
-                    showNothingFound('You search the area but find no survivors...');
+                    window.showNothingFound('You search the area but find no survivors...');
                 }
                 
                 // Consume stamina
@@ -1402,7 +1619,7 @@
 
             async function discoverNPC() {
                 try {
-                    showLoading('Exploring Surroundings', 'Searching for survivors in the area...');
+                    window.showLoading('Exploring Surroundings', 'Searching for survivors in the area...');
 
                     // Call Ollama API to generate NPC character
                     const response = await fetch('/api/ollama', {
@@ -1412,7 +1629,7 @@
                         },
                         body: JSON.stringify({
                             prompt: `Generate character in this world: ${gameData.worldDescription}. Current location: ${gameData.currentLocation.title}. Location description: ${gameData.currentLocation.description}.`,
-                            model: 'mistral',
+                            model: window.config.defaultOllamaModel,
                             role: 'character_builder',
                             stream: false
                         })
@@ -1448,7 +1665,9 @@
                         },
                         body: JSON.stringify({
                             prompt: `post-apocalyptic survivor, ${npcData.name}, ${npcData.description}, ${npcData.attributes.clothing}, detailed portrait, realistic style`,
-                            areaId: `npc_${gameData.nextNPCId}`
+                            areaId: `npc_${gameData.nextNPCId}`,
+                            width: 576,
+                            height: 1024
                         })
                     });
 
@@ -1473,29 +1692,29 @@
                     if (currentAreaNPCs.length < 2) { // Max 2 NPCs per area
                         gameData.areaNPCs.set(gameData.currentLocation.title, [...currentAreaNPCs, newNPC]);
                         gameData.nextNPCId++;
-                        saveGameState();
+                        window.saveGameState(gameData);
                         displayCurrentLocation();
-                        showNothingFound(`You found a survivor: ${npcData.name}`);
+                        window.showNothingFound(`You found a survivor: ${npcData.name}`);
                     } else {
-                        showNothingFound('This area already has the maximum number of survivors.');
+                        window.showNothingFound('This area already has the maximum number of survivors.');
                     }
 
-                    hideLoading();
+                    window.hideLoading();
 
                 } catch (error) {
                     console.error('Error in discoverNPC:', error);
-                    hideLoading();
-                    showNothingFound(`Error: ${error.message}`);
+                    window.hideLoading();
+                    window.showNothingFound(`Error: ${error.message}`);
                 }
             }
 
             sleepButton.addEventListener('click', () => {
                 if (gameData.stats.stamina >= 100) {
-                    showNothingFound('Your stamina is already full');
+                    window.showNothingFound('Your stamina is already full');
                     return;
                 }
 
-                showLoading('Sleeping', 'Resting to restore stamina...');
+                window.showLoading('Sleeping', 'Resting to restore stamina...');
                 
                 // Restore random amount of stamina (20-30)
                 const staminaRestored = Math.floor(Math.random() * 11) + 20;
@@ -1504,18 +1723,18 @@
                 advanceTime(1); // Sleeping takes 1 hour
                 updateStatsDisplay();
                 
-                hideLoading();
-                showNothingFound(`You rested and restored ${staminaRestored} stamina`);
+                window.hideLoading();
+                window.showNothingFound(`You rested and restored ${staminaRestored} stamina`);
             });
 
             searchFoodButton.addEventListener('click', () => {
                 // Check stamina
                 if (gameData.stats.stamina < 10) {
-                    showNothingFound('Not enough stamina to search for food (10 stamina required)');
+                    window.showNothingFound('Not enough stamina to search for food (10 stamina required)');
                     return;
                 }
 
-                showLoading('Searching for Food', 'Looking for edible items in the area...');
+                window.showLoading('Searching for Food', 'Looking for edible items in the area...');
                 
                 // Consume stamina
                 gameData.stats.stamina -= 10;
@@ -1527,22 +1746,22 @@
                 advanceTime(1); // Searching takes 1 hour
                 updateStatsDisplay();
                 
-                hideLoading();
+                window.hideLoading();
                 if (foodFound > 0) {
-                    showNothingFound(`You found some food and restored ${foodFound} hunger`);
+                    window.showNothingFound(`You found some food and restored ${foodFound} hunger`);
                 } else {
-                    showNothingFound('You searched but found no food');
+                    window.showNothingFound('You searched but found no food');
                 }
             });
 
             searchWaterButton.addEventListener('click', () => {
                 // Check stamina
                 if (gameData.stats.stamina < 10) {
-                    showNothingFound('Not enough stamina to search for water (10 stamina required)');
+                    window.showNothingFound('Not enough stamina to search for water (10 stamina required)');
                     return;
                 }
 
-                showLoading('Searching for Water', 'Looking for drinkable water in the area...');
+                window.showLoading('Searching for Water', 'Looking for drinkable water in the area...');
                 
                 // Consume stamina
                 gameData.stats.stamina -= 10;
@@ -1554,11 +1773,11 @@
                 advanceTime(1); // Searching takes 1 hour
                 updateStatsDisplay();
                 
-                hideLoading();
+                window.hideLoading();
                 if (waterFound > 0) {
-                    showNothingFound(`You found some water and restored ${waterFound} thirst`);
+                    window.showNothingFound(`You found some water and restored ${waterFound} thirst`);
                 } else {
-                    showNothingFound('You searched but found no water');
+                    window.showNothingFound('You searched but found no water');
                 }
             });
 
@@ -1614,7 +1833,7 @@
                 }
                 
                 try {
-                    showLoading('Regenerating Background', 'Creating a new visual representation of your current location...');
+                    window.showLoading('Regenerating Background', 'Creating a new visual representation of your current location...');
                     
                     const imageResponse = await fetch('/api/generate-image', {
                         method: 'POST',
@@ -1662,13 +1881,13 @@
 
                     // Update the display and save state
                     locationImage.src = imageUrl;
-                    saveGameState();
+                    window.saveGameState(gameData);
 
-                    hideLoading();
+                    window.hideLoading();
 
                 } catch (error) {
                     console.error('Error regenerating image:', error);
-                    hideLoading();
+                    window.hideLoading();
                     alert(`Error: ${error.message}\nPlease try again.`);
                 }
             });
@@ -1679,22 +1898,12 @@
                 daysSurvivedSpan.textContent = gameData.daysSurvived;
                 currentTimeSpan.textContent = formatTime(gameData.currentTime.hours, gameData.currentTime.minutes);
                 updateStatsDisplay();
-                saveGameState();
-            }
-
-            function showLoading(message, description) {
-                loadingMessage.textContent = message;
-                loadingDescription.textContent = description;
-                loadingOverlay.style.display = 'flex';
-            }
-
-            function hideLoading() {
-                loadingOverlay.style.display = 'none';
+                window.saveGameState(gameData);
             }
 
             async function generateInitialLocation() {
                 try {
-                    showLoading('Generating Initial Location', 'Creating your starting point in the post-apocalyptic world...');
+                    window.showLoading('Generating Initial Location', 'Creating your starting point in the post-apocalyptic world...');
                     
                     // Call Ollama API to generate location description
                     const response = await fetch('/api/generate-location', {
@@ -1715,8 +1924,7 @@
 
                     const locationData = await response.json();
                     
-                    loadingMessage.textContent = 'Generating Location Image';
-                    loadingDescription.textContent = 'Creating a visual representation of your surroundings...';
+                    window.showLoading('Generating Location Image', 'Creating a visual representation of your surroundings...');
                     
                     // Generate and display location image
                     const imageResponse = await fetch('/api/generate-image', {
@@ -1774,14 +1982,14 @@
                     // Update game stats and save state
                     updateGameStats();
                     displayCurrentLocation();
-                    saveGameState();
+                    window.saveGameState(gameData);
 
-                    hideLoading();
+                    window.hideLoading();
 
                 } catch (error) {
                     console.error('Error in generateInitialLocation:', error);
-                    hideLoading();
-                    showNothingFound(`Error: ${error.message}`);
+                    window.hideLoading();
+                    window.showNothingFound(`Error: ${error.message}`);
                     // Reset to start screen on error
                     startScreen.style.display = 'flex';
                     gameState.style.display = 'none';
@@ -1795,11 +2003,11 @@
                     const currentConnections = gameData.areaConnections.get(gameData.currentLocation.title) || [];
                     
                     if (currentConnections.length >= currentMaxLinked) {
-                        showNothingFound('You have discovered all possible areas from this location.');
+                        window.showNothingFound('You have discovered all possible areas from this location.');
                         return;
                     }
 
-                    showLoading('Exploring Surroundings', 'Searching for new locations in the post-apocalyptic world...');
+                    window.showLoading('Exploring Surroundings', 'Searching for new locations in the post-apocalyptic world...');
 
                     // Call Ollama API to generate location description
                     const response = await fetch('/api/generate-location', {
@@ -1820,8 +2028,7 @@
 
                     const locationData = await response.json();
                     
-                    loadingMessage.textContent = 'Generating Location Image';
-                    loadingDescription.textContent = 'Creating a visual representation of the new area...';
+                    window.showLoading('Generating Location Image', 'Creating a visual representation of the new area...');
                     
                     // Generate and display location image
                     const imageResponse = await fetch('/api/generate-image', {
@@ -1892,20 +2099,20 @@
                     // Update game stats and save state
                     updateGameStats();
                     displayDiscoveredAreas();
-                    saveGameState();
+                    window.saveGameState(gameData);
 
-                    hideLoading();
+                    window.hideLoading();
 
                     // Show success message
-                    showNothingFound(`Discovered new area: ${newArea.title}`);
+                    window.showNothingFound(`Discovered new area: ${newArea.title}`);
 
                     // Update explore button state
                     updateExploreButtonState();
 
                 } catch (error) {
                     console.error('Error in generateNewLocation:', error);
-                    hideLoading();
-                    showNothingFound(`Error: ${error.message}`);
+                    window.hideLoading();
+                    window.showNothingFound(`Error: ${error.message}`);
                 }
             }
 
@@ -1990,6 +2197,18 @@
                 locationInfo.classList.toggle('hidden');
                 descriptionToggle.textContent = locationInfo.classList.contains('hidden') ? '📄' : '📝';
                 descriptionToggle.title = locationInfo.classList.contains('hidden') ? 'Show Description' : 'Hide Description';
+            });
+
+            // Close modal when clicking the close button
+            document.querySelector('.npc-modal-close').addEventListener('click', () => {
+                document.getElementById('npcModal').style.display = 'none';
+            });
+
+            // Close modal when clicking outside
+            document.getElementById('npcModal').addEventListener('click', (e) => {
+                if (e.target === document.getElementById('npcModal')) {
+                    document.getElementById('npcModal').style.display = 'none';
+                }
             });
         });
     </script>

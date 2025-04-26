@@ -591,7 +591,10 @@ app.get('/infinite-adventure', async (req, res) => {
 
 // Add Survival Game route
 app.get('/survival-game', (req, res) => {
-    res.render('survival-game', { title: 'Post-Apocalyptic Survival' });
+    res.render('survival-game', { 
+        title: 'Post-Apocalyptic Survival',
+        defaultOllamaModel: config.defaultOllamaModel
+    });
 });
 
 // Add Ollama API endpoint
