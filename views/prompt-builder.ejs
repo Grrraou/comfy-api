@@ -91,6 +91,26 @@
             margin-top: 20px;
             display: none;
         }
+        .image-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .remove-bg-btn {
+            background-color: #2196F3;
+            color: white;
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .remove-bg-btn:hover {
+            background-color: #1976D2;
+        }
+        .remove-bg-btn:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
         .character-section {
             border: 1px solid #ddd;
             padding: 10px;
@@ -316,6 +336,12 @@
     <div class="main-content">
         <div class="image-container" id="imageContainer" style="display: none;">
             <img id="generatedImage" src="" alt="Generated Image">
+            <div class="loading" id="loadingIndicator">
+                <p>Generating image...</p>
+            </div>
+        </div>
+        <div class="image-actions">
+            <button id="removeBackground" class="remove-bg-btn" disabled>Remove Background</button>
         </div>
     </div>
 
@@ -510,10 +536,13 @@
             const imageContainer = document.getElementById('imageContainer');
             const generatedImage = document.getElementById('generatedImage');
             const generateButton = document.getElementById('generateButton');
+            const loadingIndicator = document.getElementById('loadingIndicator');
             
             loading.style.display = 'block';
+            loadingIndicator.style.display = 'block';
             error.style.display = 'none';
-            imageContainer.style.display = 'none';
+            imageContainer.style.display = 'block';
+            generatedImage.style.display = 'none';
             generateButton.disabled = true;
             isGenerating = true;
             
@@ -535,6 +564,7 @@
             .then(response => response.json())
             .then(data => {
                 loading.style.display = 'none';
+                loadingIndicator.style.display = 'none';
                 generateButton.disabled = false;
                 isGenerating = false;
                 
@@ -551,16 +581,58 @@
                 } else {
                     // Add timestamp to force browser to reload the image
                     generatedImage.src = data.imagePath + '?t=' + Date.now();
-                    imageContainer.style.display = 'block';
+                    generatedImage.style.display = 'block';
+                    document.getElementById('removeBackground').disabled = false;
                 }
             })
             .catch(error => {
                 loading.style.display = 'none';
+                loadingIndicator.style.display = 'none';
                 generateButton.disabled = false;
                 isGenerating = false;
                 error.textContent = 'Error: ' + error.message;
                 error.style.display = 'block';
             });
+        });
+
+        // Handle remove background button
+        document.getElementById('removeBackground').addEventListener('click', async () => {
+            const image = document.getElementById('generatedImage');
+            if (!image.src) return;
+            
+            const removeBgBtn = document.getElementById('removeBackground');
+            removeBgBtn.disabled = true;
+            
+            try {
+                // Create a FormData object
+                const formData = new FormData();
+                
+                // Fetch the image and convert it to a blob
+                const response = await fetch(image.src);
+                const blob = await response.blob();
+                
+                // Add the image to the FormData
+                formData.append('image', blob, 'image.png');
+                
+                // Send the request to remove background
+                const removeBgResponse = await fetch('/api/remove-background', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await removeBgResponse.json();
+                
+                if (data.success) {
+                    // Update the image with the processed version
+                    image.src = data.processedImagePath;
+                } else {
+                    alert('Failed to remove background: ' + data.error);
+                }
+            } catch (error) {
+                alert('Error removing background: ' + error.message);
+            } finally {
+                removeBgBtn.disabled = false;
+            }
         });
     </script>
 </body>
