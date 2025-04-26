@@ -85,17 +85,19 @@
             transform: translateY(100%);
         }
         .narrative-toggle {
-            position: absolute;
-            top: -30px;
-            right: 20px;
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
             background-color: rgba(0, 0, 0, 0.7);
             color: #ffffff;
             border: 1px solid #666;
-            padding: 5px 10px;
+            padding: 8px 16px;
             border-radius: 4px;
             cursor: pointer;
             transition: all 0.2s ease;
             font-weight: bold;
+            z-index: 9999;
+            font-size: 1rem;
         }
         .narrative-toggle:hover {
             background-color: rgba(0, 0, 0, 0.9);
@@ -277,8 +279,8 @@
             <div class="scene-container">
                 <img id="sceneImage" class="scene-image" alt="Scene">
                 <div class="loading" id="loadingIndicator">Loading...</div>
+                <button class="narrative-toggle" id="narrativeToggle">Hide Text</button>
                 <div class="narrative-box">
-                    <button class="narrative-toggle" id="narrativeToggle">Hide Text</button>
                     <p class="narrative-text" id="narrativeText"></p>
                 </div>
             </div>
@@ -289,7 +291,6 @@
     <script>
         // Initialize modal
         const worldModal = new bootstrap.Modal(document.getElementById('worldModal'));
-        worldModal.show();
 
         // Game state
         let gameState = {
@@ -305,9 +306,13 @@
             document.getElementById('worldDescriptionDisplay').textContent = gameState.worldDescription;
             if (gameState.currentScene) {
                 document.getElementById('sceneImage').src = gameState.currentScene;
-                document.getElementById('sceneImage').style.display = 'block';
+                document.getElementById('sceneImage').classList.add('loaded');
             }
+            document.getElementById('narrativeText').textContent = gameState.worldDescription;
             updateActionsList(gameState.actions);
+        } else {
+            // Only show the modal if there's no saved state
+            worldModal.show();
         }
 
         // Start adventure button handler
