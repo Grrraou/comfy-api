@@ -8,6 +8,9 @@
     "generate": "node generate-image.js",
     "start": "node webui.js"
   },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
   "dependencies": {
     "axios": "^1.6.7",
     "express": "^4.18.2",
