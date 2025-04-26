@@ -167,6 +167,25 @@
         .world-description-btn.collapsed::after {
             transform: rotate(-90deg);
         }
+        .edit-btn {
+            float: right;
+            background: none;
+            border: none;
+            color: #666;
+            cursor: pointer;
+            padding: 0;
+            margin-left: 10px;
+        }
+        .edit-btn:hover {
+            color: #888;
+        }
+        .edit-form {
+            display: none;
+            margin-top: 1rem;
+        }
+        .edit-form.show {
+            display: block;
+        }
         .modal-content {
             background-color: #2d2d2d;
             color: #ffffff;
@@ -240,8 +259,23 @@
                 </div>
                 <div class="modal-body">
                     <div class="mb-3">
-                        <label for="worldDescription" class="form-label">Describe your world</label>
-                        <textarea class="form-control" id="worldDescription" rows="5" placeholder="Describe the world where your adventure takes place..."></textarea>
+                        <label for="worldLanguage" class="form-label">Narrator Language</label>
+                        <select class="form-select" id="worldLanguage">
+                            <option value="en">English</option>
+                            <option value="es">Spanish</option>
+                            <option value="fr">French</option>
+                            <option value="de">German</option>
+                            <option value="it">Italian</option>
+                            <option value="pt">Portuguese</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="worldDescription" class="form-label">World Description</label>
+                        <textarea class="form-control" id="worldDescription" rows="5" placeholder="Describe the world where your adventure takes place...">A medieval fantasy world with magic, dragons, and ancient ruins. The land is divided into several kingdoms, each with its own unique culture and traditions. Magic is rare but powerful, and those who can wield it are both respected and feared.</textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="playerDescription" class="form-label">Player Description</label>
+                        <textarea class="form-control" id="playerDescription" rows="5" placeholder="Describe your character and their goals...">You are a young adventurer seeking to prove yourself. You have basic combat skills and a thirst for knowledge about the world's ancient magic. Your goal is to uncover the secrets of the lost civilization and become a renowned hero.</textarea>
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -259,6 +293,36 @@
             <div class="mb-3">
                 <button class="world-description-btn" id="worldDescriptionBtn">World Description</button>
                 <div class="world-description" id="worldDescriptionDisplay"></div>
+                <button class="edit-btn" id="editWorldBtn">✏️</button>
+                <div class="edit-form" id="editWorldForm">
+                    <textarea class="form-control" id="editWorldDescription" rows="3"></textarea>
+                    <button class="btn btn-outline-light w-100 mt-2" id="saveWorldEdit">Save Changes</button>
+                </div>
+            </div>
+            <div class="mb-3">
+                <button class="world-description-btn" id="playerDescriptionBtn">Player Description</button>
+                <div class="world-description" id="playerDescriptionDisplay"></div>
+                <button class="edit-btn" id="editPlayerBtn">✏️</button>
+                <div class="edit-form" id="editPlayerForm">
+                    <textarea class="form-control" id="editPlayerDescription" rows="3"></textarea>
+                    <button class="btn btn-outline-light w-100 mt-2" id="savePlayerEdit">Save Changes</button>
+                </div>
+            </div>
+            <div class="mb-3">
+                <button class="world-description-btn" id="languageBtn">Narrator Language</button>
+                <div class="world-description" id="languageDisplay"></div>
+                <button class="edit-btn" id="editLanguageBtn">✏️</button>
+                <div class="edit-form" id="editLanguageForm">
+                    <select class="form-select" id="editLanguage">
+                        <option value="en">English</option>
+                        <option value="es">Spanish</option>
+                        <option value="fr">French</option>
+                        <option value="de">German</option>
+                        <option value="it">Italian</option>
+                        <option value="pt">Portuguese</option>
+                    </select>
+                    <button class="btn btn-outline-light w-100 mt-2" id="saveLanguageEdit">Save Changes</button>
+                </div>
             </div>
             <div class="mb-3">
                 <button class="btn btn-outline-light w-100" id="generateScene">Generate New Scene</button>
@@ -295,6 +359,8 @@
         // Game state
         let gameState = {
             worldDescription: '',
+            playerDescription: '',
+            language: 'en',
             currentScene: '',
             actions: []
         };
@@ -304,6 +370,8 @@
         if (savedState) {
             gameState = JSON.parse(savedState);
             document.getElementById('worldDescriptionDisplay').textContent = gameState.worldDescription;
+            document.getElementById('playerDescriptionDisplay').textContent = gameState.playerDescription;
+            document.getElementById('languageDisplay').textContent = getLanguageName(gameState.language);
             if (gameState.currentScene) {
                 document.getElementById('sceneImage').src = gameState.currentScene;
                 document.getElementById('sceneImage').classList.add('loaded');
@@ -311,16 +379,140 @@
             document.getElementById('narrativeText').textContent = gameState.worldDescription;
             updateActionsList(gameState.actions);
         } else {
-            // Only show the modal if there's no saved state
             worldModal.show();
         }
+
+        function getLanguageName(code) {
+            const languages = {
+                'en': 'English',
+                'es': 'Spanish',
+                'fr': 'French',
+                'de': 'German',
+                'it': 'Italian',
+                'pt': 'Portuguese'
+            };
+            return languages[code] || 'English';
+        }
+
+        // Edit button handlers
+        document.getElementById('editWorldBtn').addEventListener('click', () => {
+            const form = document.getElementById('editWorldForm');
+            const textarea = document.getElementById('editWorldDescription');
+            textarea.value = gameState.worldDescription;
+            form.classList.toggle('show');
+        });
+
+        document.getElementById('editPlayerBtn').addEventListener('click', () => {
+            const form = document.getElementById('editPlayerForm');
+            const textarea = document.getElementById('editPlayerDescription');
+            textarea.value = gameState.playerDescription;
+            form.classList.toggle('show');
+        });
+
+        document.getElementById('editLanguageBtn').addEventListener('click', () => {
+            const form = document.getElementById('editLanguageForm');
+            const select = document.getElementById('editLanguage');
+            select.value = gameState.language;
+            form.classList.toggle('show');
+        });
+
+        // Save edit handlers
+        document.getElementById('saveWorldEdit').addEventListener('click', async () => {
+            const newDescription = document.getElementById('editWorldDescription').value;
+            if (newDescription) {
+                gameState.worldDescription = newDescription;
+                document.getElementById('worldDescriptionDisplay').textContent = newDescription;
+                document.getElementById('editWorldForm').classList.remove('show');
+                await updateNarrative();
+                localStorage.setItem('infiniteAdventureState', JSON.stringify(gameState));
+            }
+        });
+
+        document.getElementById('savePlayerEdit').addEventListener('click', async () => {
+            const newDescription = document.getElementById('editPlayerDescription').value;
+            if (newDescription) {
+                gameState.playerDescription = newDescription;
+                document.getElementById('playerDescriptionDisplay').textContent = newDescription;
+                document.getElementById('editPlayerForm').classList.remove('show');
+                await updateNarrative();
+                localStorage.setItem('infiniteAdventureState', JSON.stringify(gameState));
+            }
+        });
+
+        document.getElementById('saveLanguageEdit').addEventListener('click', async () => {
+            const newLanguage = document.getElementById('editLanguage').value;
+            if (newLanguage) {
+                gameState.language = newLanguage;
+                document.getElementById('languageDisplay').textContent = getLanguageName(newLanguage);
+                document.getElementById('editLanguageForm').classList.remove('show');
+                await updateNarrative();
+                localStorage.setItem('infiniteAdventureState', JSON.stringify(gameState));
+            }
+        });
+
+        async function updateNarrative() {
+            try {
+                const configResponse = await fetch('/api/config');
+                if (!configResponse.ok) {
+                    throw new Error(`Failed to fetch configuration: ${configResponse.status}`);
+                }
+                const config = await configResponse.json();
+
+                const response = await fetch('/api/ollama', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        prompt: `You are a narrator speaking in ${getLanguageName(gameState.language)}. Your task is to create a detailed setting based on this world description: ${gameState.worldDescription}\n\nPlayer character: ${gameState.playerDescription}\n\nIMPORTANT: All your responses must be in ${getLanguageName(gameState.language)}. Do not mix languages.`,
+                        model: config.defaultOllamaModel,
+                        role: 'narrator'
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Failed to update narrative: ${response.status}`);
+                }
+
+                const data = await response.json();
+                const newNarrative = data.response.choices[0].message.content;
+                document.getElementById('narrativeText').textContent = newNarrative;
+                gameState.worldDescription = newNarrative;
+                document.getElementById('worldDescriptionDisplay').textContent = newNarrative;
+            } catch (error) {
+                console.error('Error updating narrative:', error);
+                alert('Failed to update narrative: ' + error.message);
+            }
+        }
+
+        // World description button handler
+        document.getElementById('worldDescriptionBtn').addEventListener('click', () => {
+            const btn = document.getElementById('worldDescriptionBtn');
+            const description = document.getElementById('worldDescriptionDisplay');
+            btn.classList.toggle('collapsed');
+            description.classList.toggle('show');
+        });
+
+        document.getElementById('playerDescriptionBtn').addEventListener('click', () => {
+            const btn = document.getElementById('playerDescriptionBtn');
+            const description = document.getElementById('playerDescriptionDisplay');
+            btn.classList.toggle('collapsed');
+            description.classList.toggle('show');
+        });
+
+        document.getElementById('languageBtn').addEventListener('click', () => {
+            const btn = document.getElementById('languageBtn');
+            const description = document.getElementById('languageDisplay');
+            btn.classList.toggle('collapsed');
+            description.classList.toggle('show');
+        });
 
         // Start adventure button handler
         document.getElementById('startAdventure').addEventListener('click', async () => {
             const worldDescription = document.getElementById('worldDescription').value;
+            const playerDescription = document.getElementById('playerDescription').value;
+            const language = document.getElementById('worldLanguage').value;
             
-            if (!worldDescription) {
-                alert('Please describe your world first!');
+            if (!worldDescription || !playerDescription) {
+                alert('Please fill in both world and player descriptions!');
                 return;
             }
 
@@ -340,12 +532,12 @@
                     throw new Error('No default Ollama model configured. Please set one in the configuration page.');
                 }
 
-                // Generate world description
+                // Generate enhanced world description
                 const worldResponse = await fetch('/api/ollama', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        prompt: `Based on this world description, create a detailed setting: ${worldDescription}`,
+                        prompt: `You are a narrator speaking in ${getLanguageName(language)}. Your task is to create a detailed setting based on this world description: ${worldDescription}\n\nPlayer character: ${playerDescription}\n\nIMPORTANT: All your responses must be in ${getLanguageName(language)}. Do not mix languages.`,
                         model: config.defaultOllamaModel,
                         role: 'narrator'
                     })
@@ -360,8 +552,12 @@
                 
                 // Update game state and narrative
                 gameState.worldDescription = enhancedWorldDescription;
+                gameState.playerDescription = playerDescription;
+                gameState.language = language;
                 document.getElementById('narrativeText').textContent = enhancedWorldDescription;
                 document.getElementById('worldDescriptionDisplay').textContent = enhancedWorldDescription;
+                document.getElementById('playerDescriptionDisplay').textContent = playerDescription;
+                document.getElementById('languageDisplay').textContent = getLanguageName(language);
                 
                 // Generate initial scene and actions in parallel
                 await Promise.all([
@@ -379,14 +575,6 @@
             } finally {
                 loadingIndicator.classList.remove('show');
             }
-        });
-
-        // World description button handler
-        document.getElementById('worldDescriptionBtn').addEventListener('click', () => {
-            const btn = document.getElementById('worldDescriptionBtn');
-            const description = document.getElementById('worldDescriptionDisplay');
-            btn.classList.toggle('collapsed');
-            description.classList.toggle('show');
         });
 
         // Generate scene function
@@ -459,7 +647,7 @@
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        prompt: `Generate 4 possible actions for the player in this world: ${gameState.worldDescription}. Current scene: ${gameState.currentScene ? 'An image is displayed' : 'No image yet'}. Format each action as a short, clear command.`,
+                        prompt: `You are a narrator speaking in ${getLanguageName(gameState.language)}. Generate 4 possible actions for the player in this world: ${gameState.worldDescription}. Current scene: ${gameState.currentScene ? 'An image is displayed' : 'No image yet'}. Player character: ${gameState.playerDescription}\n\nIMPORTANT: All your responses must be in ${getLanguageName(gameState.language)}. Do not mix languages. Format each action as a short, clear command.`,
                         model: model,
                         role: 'narrator'
                     })
@@ -522,7 +710,7 @@
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        prompt: `Based on this world: ${gameState.worldDescription} and the action "${action}", describe what happens next.`,
+                        prompt: `You are a narrator speaking in ${getLanguageName(gameState.language)}. Based on this world: ${gameState.worldDescription} and the action "${action}", describe what happens next. Player character: ${gameState.playerDescription}\n\nIMPORTANT: All your responses must be in ${getLanguageName(gameState.language)}. Do not mix languages.`,
                         model: config.defaultOllamaModel,
                         role: 'narrator'
                     })
@@ -640,6 +828,8 @@
             // Reset game state
             gameState = {
                 worldDescription: '',
+                playerDescription: '',
+                language: 'en',
                 currentScene: '',
                 actions: []
             };
