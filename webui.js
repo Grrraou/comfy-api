@@ -11,8 +11,36 @@ const port = process.env.PORT || 3000;
 const config = {
     comfyuiUrl: process.env.COMFYUI_URL || 'http://host.docker.internal:8188',
     apiEndpoint: '/api',
-    ollamaUrl: process.env.OLLAMA_URL || 'http://host.docker.internal:11434'
+    ollamaUrl: process.env.OLLAMA_URL || 'http://host.docker.internal:11434',
+    defaultModel: process.env.DEFAULT_MODEL || 'dreamshaper_8.safetensors',
+    defaultWidth: process.env.DEFAULT_WIDTH || 1024,
+    defaultHeight: process.env.DEFAULT_HEIGHT || 576,
+    defaultOllamaModel: process.env.DEFAULT_OLLAMA_MODEL || null // Will be set to first available model
 };
+
+// Load configuration from file if it exists
+try {
+    const configFile = path.join(__dirname, 'config.json');
+    if (fs.existsSync(configFile)) {
+        const savedConfig = JSON.parse(fs.readFileSync(configFile, 'utf8'));
+        Object.assign(config, savedConfig);
+    }
+} catch (error) {
+    console.error('Error loading config file:', error);
+}
+
+// Save configuration to file
+function saveConfig(newConfig) {
+    try {
+        const configFile = path.join(__dirname, 'config.json');
+        fs.writeFileSync(configFile, JSON.stringify(newConfig, null, 2));
+        Object.assign(config, newConfig);
+        return true;
+    } catch (error) {
+        console.error('Error saving config file:', error);
+        return false;
+    }
+}
 
 // Configure multer for file uploads
 const storage = multer.diskStorage({
@@ -92,12 +120,17 @@ app.post('/api/generate', express.json(), (req, res) => {
         return res.status(400).json({ error: 'Prompt is required' });
     }
 
+    // Use default values if not provided
+    const finalModel = model || config.defaultModel;
+    const finalWidth = width || config.defaultWidth;
+    const finalHeight = height || config.defaultHeight;
+
     // Escape single quotes and wrap in single quotes to avoid shell interpretation issues
     const escapedPrompt = prompt.replace(/'/g, "'\\''");
     const escapedNegative = (negative || '').replace(/'/g, "'\\''");
-    const escapedModel = (model || '').replace(/'/g, "'\\''");
+    const escapedModel = finalModel.replace(/'/g, "'\\''");
     
-    const command = `node generate-image.js '${escapedPrompt}' '${escapedNegative}' '${escapedModel}' '${width || 448}' '${height || 640}'`;
+    const command = `node generate-image.js '${escapedPrompt}' '${escapedNegative}' '${escapedModel}' '${finalWidth}' '${finalHeight}'`;
     console.log('Executing command:', command);
     
     exec(command, (error, stdout, stderr) => {
@@ -383,6 +416,15 @@ app.get('/ollama-test', async (req, res) => {
     res.render('ollama-test', { models });
 });
 
+// Add Infinite Adventure route
+app.get('/infinite-adventure', async (req, res) => {
+    const models = await getAvailableOllamaModels();
+    res.render('infinite-adventure', { 
+        title: 'Infinite Adventure - Local AI API Sandbox',
+        models: models
+    });
+});
+
 // Add Ollama API endpoint
 app.post('/api/ollama', async (req, res) => {
     try {
@@ -396,7 +438,7 @@ app.post('/api/ollama', async (req, res) => {
         // Add system message based on role
         let systemMessage = "";
         if (role === "narrator") {
-            systemMessage = "You are a narrator that provides brief, concise descriptions based on the given context. Keep your responses short and focused on key details.";
+            systemMessage = "You are a narrator that provides brief, concise descriptions based on the given context. Keep your responses short and focused on key details. Use vivid language and maintain a consistent narrative style.";
         } else if (role === "character_builder") {
             systemMessage = `You are a character builder that ALWAYS responds in valid JSON format. Your response must be a valid JSON object with the following structure:
             {
@@ -415,6 +457,8 @@ app.post('/api/ollama', async (req, res) => {
                 "additionalDetails": "string"
             }
             Do not include any text outside the JSON object. Do not include markdown formatting. The response must be parseable as JSON.`;
+        } else if (role === "sd-prompt") {
+            systemMessage = "You are a Stable Diffusion prompt generator. Convert descriptions into optimized keyword-based prompts. Use parentheses for emphasis, commas for separation, and avoid long sentences. Focus on key visual elements and artistic styles. Example format: (detailed face), (asian female), (warrior armor), (dynamic pose), (epic lighting), (digital art), (highly detailed), (sharp focus).";
         }
         
         if (systemMessage) {
@@ -425,7 +469,7 @@ app.post('/api/ollama', async (req, res) => {
         }
         
         messages.push({
-            role: role || "user",
+            role: "user",
             content: prompt
         });
         
@@ -506,10 +550,71 @@ app.get('/api/ollama/models', async (req, res) => {
 
 // Configuration routes
 app.get('/config', async (req, res) => {
+    const models = await getAvailableModels();
+    const ollamaModels = await getAvailableOllamaModels();
     res.render('config', {
         comfyuiUrl: config.comfyuiUrl,
-        ollamaUrl: config.ollamaUrl
+        ollamaUrl: config.ollamaUrl,
+        models: models,
+        ollamaModels: ollamaModels,
+        defaultModel: config.defaultModel,
+        defaultOllamaModel: config.defaultOllamaModel,
+        defaultWidth: config.defaultWidth,
+        defaultHeight: config.defaultHeight
     });
+});
+
+// Save configuration endpoint
+app.post('/api/config/save', express.json(), async (req, res) => {
+    try {
+        const { comfyuiUrl, ollamaUrl, defaultModel, defaultOllamaModel, defaultWidth, defaultHeight } = req.body;
+        
+        // Test ComfyUI connection
+        const comfyuiResponse = await axios.get(`${comfyuiUrl}/object_info`);
+        const comfyuiModels = [];
+        const checkpointNode = comfyuiResponse.data.CheckpointLoaderSimple;
+        if (checkpointNode && checkpointNode.input && checkpointNode.input.required) {
+            const ckptName = checkpointNode.input.required.ckpt_name;
+            if (ckptName && ckptName[0] && ckptName[0].length > 0) {
+                comfyuiModels.push(...ckptName[0]);
+            }
+        }
+        
+        // Test Ollama connection
+        const ollamaResponse = await axios.get(`${ollamaUrl}/api/tags`);
+        const ollamaModels = ollamaResponse.data.models.map(model => model.name);
+        
+        // Validate models
+        if (!comfyuiModels.includes(defaultModel)) {
+            return res.json({ success: false, error: 'Invalid ComfyUI model selected' });
+        }
+        
+        if (!ollamaModels.includes(defaultOllamaModel)) {
+            return res.json({ success: false, error: 'Invalid Ollama model selected' });
+        }
+        
+        const newConfig = {
+            comfyuiUrl,
+            ollamaUrl,
+            defaultModel,
+            defaultOllamaModel,
+            defaultWidth: parseInt(defaultWidth),
+            defaultHeight: parseInt(defaultHeight)
+        };
+        
+        if (saveConfig(newConfig)) {
+            res.json({ 
+                success: true,
+                models: comfyuiModels,
+                ollamaModels
+            });
+        } else {
+            res.json({ success: false, error: 'Failed to save configuration' });
+        }
+    } catch (error) {
+        console.error('Error saving configuration:', error);
+        res.json({ success: false, error: error.message });
+    }
 });
 
 // Test ComfyUI endpoint
@@ -571,6 +676,42 @@ app.post('/api/config/test-rembg', async (req, res) => {
         res.json({ success: false, error: error.message });
     }
 });
+
+// Get configuration endpoint
+app.get('/api/config', async (req, res) => {
+    try {
+        // Get available models
+        const models = await getAvailableModels();
+        const ollamaModels = await getAvailableOllamaModels();
+        
+        res.json({
+            ...config,
+            models,
+            ollamaModels
+        });
+    } catch (error) {
+        console.error('Error getting configuration:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Initialize default Ollama model if not set
+async function initializeDefaultOllamaModel() {
+    if (!config.defaultOllamaModel) {
+        try {
+            const models = await getAvailableOllamaModels();
+            if (models.length > 0) {
+                config.defaultOllamaModel = models[0];
+                saveConfig(config);
+            }
+        } catch (error) {
+            console.error('Error initializing default Ollama model:', error);
+        }
+    }
+}
+
+// Call initialization on startup
+initializeDefaultOllamaModel();
 
 app.listen(port, () => {
     console.log(`Web UI server running at http://localhost:${port}`);

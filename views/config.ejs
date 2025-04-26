@@ -52,6 +52,26 @@
                         <input type="text" class="form-control" id="comfyuiUrl" value="<%= comfyuiUrl %>" required>
                         <div class="form-text">Example: http://host.docker.internal:8188</div>
                     </div>
+                    <div class="mb-3">
+                        <label for="defaultModel" class="form-label">Default Model</label>
+                        <select class="form-select" id="defaultModel">
+                            <% if (models && models.length > 0) { %>
+                                <% models.forEach(function(model) { %>
+                                    <option value="<%= model %>" <%= model === defaultModel ? 'selected' : '' %>><%= model %></option>
+                                <% }); %>
+                            <% } else { %>
+                                <option value="" disabled>No models available</option>
+                            <% } %>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="defaultWidth" class="form-label">Default Width</label>
+                        <input type="number" class="form-control" id="defaultWidth" value="<%= defaultWidth || 1024 %>">
+                    </div>
+                    <div class="mb-3">
+                        <label for="defaultHeight" class="form-label">Default Height</label>
+                        <input type="number" class="form-control" id="defaultHeight" value="<%= defaultHeight || 576 %>">
+                    </div>
                     <button type="submit" class="btn btn-primary">Save & Test</button>
                 </form>
                 <div id="comfyuiResult" class="test-result"></div>
@@ -85,6 +105,18 @@
                         <label for="ollamaUrl" class="form-label">API URL</label>
                         <input type="text" class="form-control" id="ollamaUrl" value="<%= ollamaUrl %>" required>
                         <div class="form-text">Example: http://host.docker.internal:11434</div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="defaultOllamaModel" class="form-label">Default Model</label>
+                        <select class="form-select" id="defaultOllamaModel">
+                            <% if (ollamaModels && ollamaModels.length > 0) { %>
+                                <% ollamaModels.forEach(function(model) { %>
+                                    <option value="<%= model %>" <%= model === defaultOllamaModel ? 'selected' : '' %>><%= model %></option>
+                                <% }); %>
+                            <% } else { %>
+                                <option value="" disabled>No models available</option>
+                            <% } %>
+                        </select>
                     </div>
                     <button type="submit" class="btn btn-primary">Save & Test</button>
                 </form>
@@ -141,6 +173,7 @@
         document.getElementById('ollamaForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const url = document.getElementById('ollamaUrl').value;
+            const defaultModel = document.getElementById('defaultOllamaModel').value;
             const resultDiv = document.getElementById('ollamaResult');
             
             resultDiv.className = 'test-result loading';
@@ -161,6 +194,19 @@
                     resultDiv.className = 'test-result success';
                     resultDiv.textContent = 'Connection successful! Available models: ' + data.models.join(', ');
                     document.getElementById('ollamaEnv').textContent = url;
+                    
+                    // Update model dropdown
+                    const modelSelect = document.getElementById('defaultOllamaModel');
+                    modelSelect.innerHTML = '';
+                    data.models.forEach(model => {
+                        const option = document.createElement('option');
+                        option.value = model;
+                        option.textContent = model;
+                        if (model === defaultModel) {
+                            option.selected = true;
+                        }
+                        modelSelect.appendChild(option);
+                    });
                 } else {
                     throw new Error(data.error || 'Connection failed');
                 }
@@ -203,6 +249,69 @@
                 resultDiv.className = 'test-result error';
                 resultDiv.textContent = 'Error: ' + error.message;
                 instructionsDiv.style.display = 'block';
+            }
+        });
+
+        // Save configuration
+        document.getElementById('saveConfig').addEventListener('click', async () => {
+            const comfyuiUrl = document.getElementById('comfyuiUrl').value;
+            const ollamaUrl = document.getElementById('ollamaUrl').value;
+            const defaultModel = document.getElementById('defaultModel').value;
+            const defaultOllamaModel = document.getElementById('defaultOllamaModel').value;
+            const defaultWidth = document.getElementById('defaultWidth').value;
+            const defaultHeight = document.getElementById('defaultHeight').value;
+
+            try {
+                const response = await fetch('/api/config/save', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        comfyuiUrl,
+                        ollamaUrl,
+                        defaultModel,
+                        defaultOllamaModel,
+                        defaultWidth,
+                        defaultHeight
+                    })
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    alert('Configuration saved successfully!');
+                    // Update model dropdowns with latest available models
+                    if (data.models) {
+                        const modelSelect = document.getElementById('defaultModel');
+                        modelSelect.innerHTML = '';
+                        data.models.forEach(model => {
+                            const option = document.createElement('option');
+                            option.value = model;
+                            option.textContent = model;
+                            if (model === defaultModel) {
+                                option.selected = true;
+                            }
+                            modelSelect.appendChild(option);
+                        });
+                    }
+                    if (data.ollamaModels) {
+                        const modelSelect = document.getElementById('defaultOllamaModel');
+                        modelSelect.innerHTML = '';
+                        data.ollamaModels.forEach(model => {
+                            const option = document.createElement('option');
+                            option.value = model;
+                            option.textContent = model;
+                            if (model === defaultOllamaModel) {
+                                option.selected = true;
+                            }
+                            modelSelect.appendChild(option);
+                        });
+                    }
+                } else {
+                    alert('Error saving configuration: ' + data.error);
+                }
+            } catch (error) {
+                alert('Error saving configuration: ' + error.message);
             }
         });
     </script>
