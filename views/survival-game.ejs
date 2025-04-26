@@ -271,7 +271,7 @@
             <button id="regenButton" class="button regen-button" title="Regenerate Background">⟳</button>
         </h1>
         <div class="game-controls">
-            <button id="exploreButton" class="button explore-button">Explore Area</button>
+            <button id="exploreButton" class="button explore-button">Explore Surroundings</button>
         </div>
         <div class="game-stats">
             <div class="stat-item">
@@ -356,7 +356,8 @@
                             linkPositions,
                             nextAreaId: parsed.nextAreaId || 1,
                             daysSurvived: parsed.daysSurvived || 0,
-                            currentTime: parsed.currentTime || { hours: 8, minutes: 0 }
+                            currentTime: parsed.currentTime || { hours: 8, minutes: 0 },
+                            maxLinkedAreas: new Map(Object.entries(parsed.maxLinkedAreas || {}))
                         };
                     }
                 } catch (error) {
@@ -372,7 +373,8 @@
                     linkPositions: new Map(),
                     nextAreaId: 1,
                     daysSurvived: 0,
-                    currentTime: { hours: 8, minutes: 0 }
+                    currentTime: { hours: 8, minutes: 0 },
+                    maxLinkedAreas: new Map()
                 };
             }
 
@@ -401,7 +403,8 @@
                         linkPositions: linkPositionsObj,
                         nextAreaId: gameData.nextAreaId,
                         daysSurvived: gameData.daysSurvived,
-                        currentTime: gameData.currentTime
+                        currentTime: gameData.currentTime,
+                        maxLinkedAreas: Object.fromEntries(gameData.maxLinkedAreas)
                     };
 
                     // Save to localStorage
@@ -445,6 +448,7 @@
                     }
                     updateGameStats();
                     displayDiscoveredAreas();
+                    updateExploreButtonState();
                 }
             }
 
@@ -544,7 +548,8 @@
                         linkPositions: new Map(),
                         nextAreaId: 1,
                         daysSurvived: 0,
-                        currentTime: { hours: 8, minutes: 0 }
+                        currentTime: { hours: 8, minutes: 0 },
+                        maxLinkedAreas: new Map()
                     };
                     
                     // Clear localStorage
@@ -706,6 +711,9 @@
 
                     // Initialize connections for the initial area
                     gameData.areaConnections.set(initialArea.title, []);
+                    
+                    // Set random max linked areas (1-3) for the initial location
+                    gameData.maxLinkedAreas.set(initialArea.title, Math.floor(Math.random() * 3) + 1);
 
                     // Increment area ID for next location
                     gameData.nextAreaId++;
@@ -727,6 +735,15 @@
 
             async function generateNewLocation() {
                 try {
+                    // Check if we've reached the maximum number of linked areas
+                    const currentMaxLinked = gameData.maxLinkedAreas.get(gameData.currentLocation.title);
+                    const currentConnections = gameData.areaConnections.get(gameData.currentLocation.title) || [];
+                    
+                    if (currentConnections.length >= currentMaxLinked) {
+                        showNothingFound('You have discovered all possible areas from this location.');
+                        return;
+                    }
+
                     // Call Ollama API to generate location description
                     const response = await fetch('/api/generate-location', {
                         method: 'POST',
@@ -803,6 +820,9 @@
                                 [...newConnections, gameData.currentLocation]
                             );
                         }
+                        
+                        // Set random max linked areas (1-3) for the new location
+                        gameData.maxLinkedAreas.set(newArea.title, Math.floor(Math.random() * 3) + 1);
                     }
 
                     // Increment area ID for next location
@@ -820,6 +840,23 @@
                 } catch (error) {
                     console.error('Error in generateNewLocation:', error);
                     showNothingFound(`Error: ${error.message}`);
+                }
+            }
+
+            function updateExploreButtonState() {
+                if (!gameData.currentLocation) {
+                    exploreButton.style.display = 'none';
+                    return;
+                }
+
+                const currentMaxLinked = gameData.maxLinkedAreas.get(gameData.currentLocation.title);
+                const currentConnections = gameData.areaConnections.get(gameData.currentLocation.title) || [];
+                
+                if (currentConnections.length >= currentMaxLinked) {
+                    exploreButton.style.display = 'none';
+                } else {
+                    exploreButton.style.display = 'block';
+                    exploreButton.title = `Explore surroundings (${currentConnections.length}/${currentMaxLinked} areas discovered)`;
                 }
             }
         });
