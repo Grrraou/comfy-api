@@ -1292,7 +1292,7 @@
             left: 50%;
             transform: translate(-50%, -50%);
             display: none;
-            z-index: 101;
+            z-index: 1000;
             width: 100%;
             height: 100%;
             pointer-events: none;
@@ -1318,15 +1318,30 @@
             transition: all 0.3s ease;
             position: absolute;
             pointer-events: auto;
+            z-index: 1001;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
         }
 
         .inventory-item-action-button:hover {
             background-color: #ff6b6b;
             transform: scale(1.2);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
         }
 
         .inventory-item-action-button.equip {
-            top: -30px;
+            top: 0px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .inventory-item-action-button.use {
+            top: 50%;
+            right: 0px;
+            transform: translateY(-50%);
+        }
+
+        .inventory-item-action-button.discard {
+            bottom: 0%;
             left: 50%;
             transform: translateX(-50%);
         }
@@ -1350,6 +1365,41 @@
         .scavenge-button:disabled {
             background-color: #666666;
             cursor: not-allowed;
+        }
+
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+        }
+
+        .modal-content {
+            background-color: #2a2a2a;
+            padding: 20px;
+            border-radius: 8px;
+            max-width: 80%;
+            text-align: center;
+        }
+
+        .modal-close-button {
+            margin-top: 15px;
+            padding: 8px 20px;
+            background-color: #ff6b6b;
+            border: none;
+            border-radius: 4px;
+            color: white;
+            cursor: pointer;
+        }
+
+        .modal-close-button:hover {
+            background-color: #ff5252;
         }
     </style>
 </head>
@@ -1515,16 +1565,6 @@
                     <div class="form-group">
                         <label for="playerEthnicity">Ethnicity</label>
                         <input type="text" id="playerEthnicity" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="playerClothing">Clothing</label>
-                        <input type="text" id="playerClothing" value="Rags" readonly>
-                    </div>
-                </div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="playerWeapon">Weapon</label>
-                        <input type="text" id="playerWeapon" value="None" readonly>
                     </div>
                     <div class="form-group">
                         <label for="playerPersonality">Personality</label>
@@ -2694,8 +2734,8 @@
                         eyeColor: document.getElementById('playerEyeColor').value,
                         hairColor: document.getElementById('playerHairColor').value,
                         ethnicity: document.getElementById('playerEthnicity').value,
-                        clothing: document.getElementById('playerClothing').value,
-                        weapon: document.getElementById('playerWeapon').value,
+                        clothing: 'None',
+                        weapon: 'None',
                         personality: document.getElementById('playerPersonality').value,
                         height: document.getElementById('playerHeight').value,
                         weight: document.getElementById('playerWeight').value
@@ -3228,8 +3268,6 @@
                     document.getElementById('playerEyeColor').value = npcData.attributes.eyeColor;
                     document.getElementById('playerHairColor').value = npcData.attributes.hairColor;
                     document.getElementById('playerEthnicity').value = npcData.attributes.ethnicity;
-                    document.getElementById('playerClothing').value = npcData.attributes.clothing;
-                    document.getElementById('playerWeapon').value = npcData.attributes.weapon;
                     document.getElementById('playerPersonality').value = npcData.attributes.personality;
                     document.getElementById('playerHeight').value = npcData.attributes.height;
                     document.getElementById('playerWeight').value = npcData.attributes.weight;
@@ -3611,6 +3649,15 @@
                     const itemElement = document.createElement('div');
                     itemElement.className = 'inventory-item';
                     const equippedText = item.equipped ? ' (equipped)' : '';
+                    
+                    // Determine which action button to show
+                    let actionButton = '';
+                    if (item.type === 'weapon' || item.type === 'clothing') {
+                        actionButton = `<button class="inventory-item-action-button equip" title="Equip" onclick="equipItem(event, ${item.id})">👕</button>`;
+                    } else if (item.type === 'consumable') {
+                        actionButton = `<button class="inventory-item-action-button use" title="Use" onclick="useItem(event, ${item.id})">🍽️</button>`;
+                    }
+
                     itemElement.innerHTML = `
                         <div class="inventory-item-image">
                             <img src="${item.imageUrl}" alt="${item.name}">
@@ -3618,7 +3665,7 @@
                         <div class="inventory-item-name">${item.name}${equippedText}</div>
                         <div class="inventory-item-type">${item.type}</div>
                         <div class="inventory-item-actions">
-                            <button class="inventory-item-action-button equip" title="Equip" onclick="equipItem(event, ${item.id})">👕</button>
+                            ${actionButton}
                             <button class="inventory-item-action-button discard" title="Discard" onclick="discardItem(event, ${item.id})">🗑️</button>
                         </div>
                     `;
@@ -3682,6 +3729,18 @@
                 try {
                     window.showLoading('Scavenging', 'Searching the area for useful items...');
 
+                    // 50% chance to find an item
+                    if (Math.random() < 0.5) {
+                        window.hideLoading();
+                        window.showNothingFound('You searched but found nothing useful...');
+                        // Still consume stamina and time even if nothing is found
+                        gameData.stats.stamina -= 20;
+                        advanceTime(2);
+                        updateStatsDisplay();
+                        window.saveGameState(gameData);
+                        return;
+                    }
+
                     // Call Ollama API to generate item
                     const response = await fetch('/api/generate-item', {
                         method: 'POST',
@@ -3708,8 +3767,10 @@
                             'Content-Type': 'application/json'
                         },
                         body: JSON.stringify({
-                            prompt: `A post-apocalyptic ${itemData.name}. ${itemData.description}. Detailed item, realistic style, worn and damaged appearance`,
-                            areaId: `item_${itemData.name.toLowerCase().replace(/[^a-z0-9]/g, '_')}`
+                            prompt: `A post-apocalyptic ${itemData.name}, (${itemData.type}:1.2). Detailed item, realistic style, (item:1.4)`,
+                            areaId: `item_${itemData.name.toLowerCase().replace(/[^a-z0-9]/g, '_')}`,
+                            width: 300,
+                            height: 300
                         })
                     });
 
@@ -3819,7 +3880,124 @@
                 window.showNothingFound(`${item.name} discarded`);
             };
 
-            // Update inventory display to include discard button
+            // Add use item function
+            window.useItem = async function(event, itemId) {
+                event.stopPropagation();
+                const item = gameData.inventory.get(itemId);
+                if (!item || item.type !== 'consumable') return;
+
+                try {
+                    window.showLoading('Using Item', `Using ${item.name}...`);
+
+                    // Call Ollama API to determine item effects
+                    const response = await fetch('/api/ollama', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            prompt: `Analyze this post-apocalyptic consumable item and determine its effects. Return a JSON object with a 'stats' field containing an array of stat changes in the format [stat:value] and a 'description' field explaining what happens when using the item. Item: ${item.name}. Description: ${item.description}. Only return the JSON object, nothing else.
+                                                        {
+                                "stats": ["hunger:20"],
+                                "description": "You open the can of beans and eat them. The protein-rich meal restores some of your hunger."
+                            }`,
+                            model: window.config.defaultOllamaModel,
+                            role: 'item_analyzer',
+                            stream: false
+                        })
+                    });
+
+                    if (!response.ok) {
+                        throw new Error('Failed to analyze item effects');
+                    }
+
+                    const effectData = await response.json();
+                    const effects = JSON.parse(effectData.response.choices[0].message.content);
+
+                    // Apply stat changes
+                    effects.stats.forEach(statChange => {
+                        const [stat, value] = statChange.replace(/[\[\]]/g, '').split(':');
+                        const statValue = parseInt(value);
+                        if (stat && !isNaN(statValue)) {
+                            gameData.stats[stat] = Math.min(100, gameData.stats[stat] + statValue);
+                        }
+                    });
+
+                    // Remove the item from inventory
+                    gameData.inventory.delete(itemId);
+                    
+                    // Save game state
+                    window.saveGameState(gameData);
+                    
+                    // Update displays
+                    updateInventoryDisplay();
+                    updateStatsDisplay();
+                    
+                    window.hideLoading();
+                    
+                    // Show description in a modal that stays until manually closed
+                    const modal = document.createElement('div');
+                    modal.className = 'modal';
+                    modal.innerHTML = `
+                        <div class="modal-content">
+                            <h3>${item.name}</h3>
+                            <p>${effects.description}</p>
+                            <button class="modal-close-button">OK</button>
+                        </div>
+                    `;
+                    document.body.appendChild(modal);
+
+                    // Add styles for the modal
+                    const style = document.createElement('style');
+                    style.textContent = `
+                        .modal {
+                            position: fixed;
+                            top: 0;
+                            left: 0;
+                            width: 100%;
+                            height: 100%;
+                            background-color: rgba(0, 0, 0, 0.7);
+                            display: flex;
+                            justify-content: center;
+                            align-items: center;
+                            z-index: 2000;
+                        }
+                        .modal-content {
+                            background-color: #2a2a2a;
+                            padding: 20px;
+                            border-radius: 8px;
+                            max-width: 80%;
+                            text-align: center;
+                        }
+                        .modal-close-button {
+                            margin-top: 15px;
+                            padding: 8px 20px;
+                            background-color: #ff6b6b;
+                            border: none;
+                            border-radius: 4px;
+                            color: white;
+                            cursor: pointer;
+                        }
+                        .modal-close-button:hover {
+                            background-color: #ff5252;
+                        }
+                    `;
+                    document.head.appendChild(style);
+
+                    // Close modal when OK button is clicked
+                    modal.querySelector('.modal-close-button').addEventListener('click', () => {
+                        document.body.removeChild(modal);
+                        document.head.removeChild(style);
+                    });
+
+                } catch (error) {
+                    console.error('Error using item:', error);
+                    window.hideLoading();
+                    window.showNothingFound(`Error: ${error.message}`);
+                }
+            };
+
+            // Update inventory display to show appropriate buttons
             function updateInventoryDisplay() {
                 // Clear existing items
                 inventoryItems.innerHTML = '';
@@ -3834,6 +4012,15 @@
                     const itemElement = document.createElement('div');
                     itemElement.className = 'inventory-item';
                     const equippedText = item.equipped ? ' (equipped)' : '';
+                    
+                    // Determine which action button to show
+                    let actionButton = '';
+                    if (item.type === 'weapon' || item.type === 'clothing') {
+                        actionButton = `<button class="inventory-item-action-button equip" title="Equip" onclick="equipItem(event, ${item.id})">👕</button>`;
+                    } else if (item.type === 'consumable') {
+                        actionButton = `<button class="inventory-item-action-button use" title="Use" onclick="useItem(event, ${item.id})">🍽️</button>`;
+                    }
+
                     itemElement.innerHTML = `
                         <div class="inventory-item-image">
                             <img src="${item.imageUrl}" alt="${item.name}">
@@ -3841,7 +4028,7 @@
                         <div class="inventory-item-name">${item.name}${equippedText}</div>
                         <div class="inventory-item-type">${item.type}</div>
                         <div class="inventory-item-actions">
-                            <button class="inventory-item-action-button equip" title="Equip" onclick="equipItem(event, ${item.id})">👕</button>
+                            ${actionButton}
                             <button class="inventory-item-action-button discard" title="Discard" onclick="discardItem(event, ${item.id})">🗑️</button>
                         </div>
                     `;

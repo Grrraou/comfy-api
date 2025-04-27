@@ -1009,6 +1009,7 @@ app.post('/api/generate-item', async (req, res) => {
                     Return the response in valid JSON format with 'name', 'type', and 'description' fields.
                     The type must be one of: weapon, clothing (should be full set of cloth and not just one item), 
                     or consumable (something that could restore health, hunger, thirst or stamina).
+                    The returned object is usually a consumable item, weapon and clothing are very rare.
                     Example format: {
                         "name": "Rusty Machete",
                         "type": "weapon",
