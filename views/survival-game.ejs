@@ -986,7 +986,21 @@
             z-index: 3;
         }
 
-        .description-toggle:hover {
+        .regen-area-button {
+            position: absolute;
+            bottom: 10px;
+            right: 50px;
+            background: none;
+            border: none;
+            color: #ffffff;
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: color 0.3s ease;
+            z-index: 3;
+        }
+
+        .description-toggle:hover,
+        .regen-area-button:hover {
             color: #ff4444;
         }
 
@@ -1156,14 +1170,39 @@
         .generate-button:hover {
             background-color: #7B1FA2;
         }
+
+        .reset-game-button {
+            background-color: #d32f2f;
+            color: white;
+            padding: 0.8rem 1.5rem;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            text-align: center;
+            margin-top: auto;
+            margin-bottom: 1rem;
+            width: 100%;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .reset-game-button:hover {
+            background-color: #b71c1c;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        .reset-game-button:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
     </style>
 </head>
 <body>
     <div class="sidebar">
         <h1 class="game-title">
             Post-Apocalyptic Survival
-            <button id="resetButton" class="button reset-button" title="Reset Game">↺</button>
-            <button id="regenButton" class="button regen-button" title="Regenerate Background">⟳</button>
         </h1>
         <div class="game-controls">
             <button id="exploreButton" class="button explore-button">Explore Surroundings</button>
@@ -1252,11 +1291,14 @@
             </div>
             <div class="player-character-description" id="playerCharacterDescription"></div>
         </div>
+
+        <button id="resetButton" class="reset-game-button" title="Reset Game - This will delete all progress">Reset Game</button>
     </div>
 
     <div class="main-content">
         <button id="menuToggle" class="menu-toggle">☰</button>
         <button id="descriptionToggle" class="description-toggle" title="Toggle Description">📝</button>
+        <button id="regenButton" class="regen-area-button" title="Regenerate Background">⟳</button>
         <div id="startScreen" class="start-screen">
             <h2>Welcome to the Post-Apocalyptic World</h2>
             <p>In this game, you'll navigate through a world ravaged by disaster. Your choices will determine your survival. 
@@ -2544,11 +2586,15 @@
                         gameData.discoveredAreas.set(locationTitle, updatedAreas);
                     }
 
-                    // Update the display and save state
-                    locationImage.src = imageUrl;
+                    // Update the display immediately
+                    const timestamp = new Date().getTime();
+                    locationImage.src = imageUrl + `?t=${timestamp}`;
+
+                    // Save state
                     window.saveGameState(gameData);
 
                     window.hideLoading();
+                    window.showNothingFound('Background image regenerated successfully');
 
                 } catch (error) {
                     console.error('Error regenerating image:', error);
