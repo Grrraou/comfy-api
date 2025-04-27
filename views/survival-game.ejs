@@ -2157,9 +2157,237 @@
             window.showNothingFound('Trading with NPCs is not implemented yet');
         };
 
-        window.fightNPC = function(event, npcId) {
+        window.fightNPC = async function(event, npcId) {
             event.stopPropagation();
-            window.showNothingFound('Fighting NPCs is not implemented yet');
+            
+            try {
+                const gameData = window.loadGameState();
+                const currentNPCs = gameData.areaNPCs.get(gameData.currentLocation.title) || [];
+                const npc = currentNPCs.find(n => n.id === npcId);
+                
+                if (!npc) {
+                    window.showNothingFound('NPC not found');
+                    return;
+                }
+
+                window.showLoading('Battle', 'Engaging in combat...');
+
+                // Call Ollama API to simulate battle
+                const response = await fetch('/api/ollama', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        prompt: `Simulate a post-apocalyptic battle between two survivors. 
+                            Return a JSON object with a 'description' field containing a detailed battle narrative, 
+                            and include one or more of these result tokens: [playerWon], [playerLose], [playerDamage:X] where X is the amount of damage taken. 
+                            Player attributes: ${JSON.stringify(gameData.playerCharacter.attributes)}. 
+                            NPC attributes: ${JSON.stringify(npc.data.attributes)}. 
+                            Example output:
+                            {
+                                "description": "You engage in a brutal melee with the survivor. Your combat experience gives you the upper hand as you dodge their wild swings and land a solid hit with your baseball bat. The survivor stumbles back, clearly injured.",
+                                "playerWon": true,
+                                "playerDamage": 15
+                            }
+                            Only return the JSON object, nothing else.`,
+                        model: window.config.defaultOllamaModel,
+                        role: 'battle_simulator',
+                        stream: false
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to simulate battle');
+                }
+
+                const battleData = await response.json();
+                const battleResult = JSON.parse(battleData.response.choices[0].message.content);
+
+                // Show battle description in a modal
+                const modal = document.createElement('div');
+                modal.className = 'modal';
+                modal.innerHTML = `
+                    <div class="modal-content">
+                        <h3>Battle with ${npc.data.name}</h3>
+                        <p>${battleResult.description}</p>
+                        ${battleResult.playerWon ? `
+                            <div class="battle-actions">
+                                <button class="modal-action-button execute" onclick="executeNPC(event, ${npcId}, '${npc.data.name}')">Execute</button>
+                                <button class="modal-action-button release" onclick="releaseNPC(event, ${npcId}, '${npc.data.name}')">Release</button>
+                                <button class="modal-action-button capture" onclick="captureNPC(event, ${npcId}, '${npc.data.name}')">Capture</button>
+                            </div>
+                        ` : ''}
+                    </div>
+                `;
+                document.body.appendChild(modal);
+
+                // Add styles for the modal and battle actions
+                const style = document.createElement('style');
+                style.setAttribute('data-battle', 'true');  // Mark as battle-specific style
+                style.textContent = `
+                    .modal {
+                        position: fixed;
+                        top: 0;
+                        left: 0;
+                        width: 100%;
+                        height: 100%;
+                        background-color: rgba(0, 0, 0, 0.7);
+                        display: flex;
+                        justify-content: center;
+                        align-items: center;
+                        z-index: 2000;
+                    }
+                    .modal-content {
+                        background-color: #2a2a2a;
+                        padding: 20px;
+                        border-radius: 8px;
+                        max-width: 80%;
+                        text-align: center;
+                    }
+                    .battle-actions {
+                        margin: 15px 0;
+                        display: flex;
+                        gap: 10px;
+                        justify-content: center;
+                    }
+                    .modal-action-button {
+                        padding: 8px 20px;
+                        background-color: #ff6b6b;
+                        border: none;
+                        border-radius: 4px;
+                        color: white;
+                        cursor: pointer;
+                    }
+                    .modal-action-button:hover {
+                        background-color: #ff5252;
+                    }
+                    .modal-action-button.release {
+                        background-color: #4CAF50;
+                    }
+                    .modal-action-button.release:hover {
+                        background-color: #45a049;
+                    }
+                    .modal-action-button.capture {
+                        background-color: #2196F3;
+                    }
+                    .modal-action-button.capture:hover {
+                        background-color: #0b7dda;
+                    }
+                `;
+                document.head.appendChild(style);
+
+                // Apply damage if any
+                if (battleResult.playerDamage) {
+                    gameData.stats.health -= battleResult.playerDamage;
+                    if (gameData.stats.health <= 0) {
+                        gameOver();
+                        return;
+                    }
+                    // Update health display directly
+                    const healthValue = document.getElementById('healthValue');
+                    const healthBar = document.getElementById('healthBar');
+                    healthValue.textContent = `${Math.max(0, gameData.stats.health)}/100`;
+                    healthBar.style.width = `${Math.max(0, gameData.stats.health)}%`;
+                    window.saveGameState(gameData);
+                }
+
+                // Handle player loss
+                if (battleResult.playerLose) {
+                    gameOver();
+                    return;
+                }
+
+                window.hideLoading();
+
+            } catch (error) {
+                console.error('Error in battle:', error);
+                window.hideLoading();
+                window.showNothingFound(`Error: ${error.message}`);
+            }
+        };
+
+        window.executeNPC = function(event, npcId, npcName) {
+            event.stopPropagation();
+            const gameData = window.loadGameState();
+            const currentNPCs = gameData.areaNPCs.get(gameData.currentLocation.title) || [];
+            const npcIndex = currentNPCs.findIndex(n => n.id === npcId);
+            
+            if (npcIndex !== -1) {
+                currentNPCs.splice(npcIndex, 1);
+                gameData.areaNPCs.set(gameData.currentLocation.title, currentNPCs);
+                window.saveGameState(gameData);
+                
+                // Clean up modal and styles
+                const modal = document.querySelector('.modal');
+                const battleStyles = document.querySelector('style[data-battle]');
+                if (modal) document.body.removeChild(modal);
+                if (battleStyles) document.head.removeChild(battleStyles);
+                
+                // Restore game view
+                document.getElementById('gameState').style.display = 'block';
+                document.getElementById('loadingOverlay').style.display = 'none';
+                
+                // Update displays
+                window.displayNPCs();
+                window.showNothingFound(`${npcName} has been executed`);
+            }
+        };
+
+        window.releaseNPC = function(event, npcId, npcName) {
+            event.stopPropagation();
+            const gameData = window.loadGameState();
+            const currentNPCs = gameData.areaNPCs.get(gameData.currentLocation.title) || [];
+            const npcIndex = currentNPCs.findIndex(n => n.id === npcId);
+            
+            if (npcIndex !== -1) {
+                currentNPCs.splice(npcIndex, 1);
+                gameData.areaNPCs.set(gameData.currentLocation.title, currentNPCs);
+                window.saveGameState(gameData);
+                
+                // Clean up modal and styles
+                const modal = document.querySelector('.modal');
+                const battleStyles = document.querySelector('style[data-battle]');
+                if (modal) document.body.removeChild(modal);
+                if (battleStyles) document.head.removeChild(battleStyles);
+                
+                // Restore game view
+                document.getElementById('gameState').style.display = 'block';
+                document.getElementById('loadingOverlay').style.display = 'none';
+                
+                // Update displays
+                window.displayNPCs();
+                window.showNothingFound(`${npcName} has been released`);
+            }
+        };
+
+        window.captureNPC = function(event, npcId, npcName) {
+            event.stopPropagation();
+            const gameData = window.loadGameState();
+            const currentNPCs = gameData.areaNPCs.get(gameData.currentLocation.title) || [];
+            const npcIndex = currentNPCs.findIndex(n => n.id === npcId);
+            
+            if (npcIndex !== -1) {
+                // For now, just remove the NPC like other actions
+                // TODO: Implement NPC capture system
+                currentNPCs.splice(npcIndex, 1);
+                gameData.areaNPCs.set(gameData.currentLocation.title, currentNPCs);
+                window.saveGameState(gameData);
+                
+                // Clean up modal and styles
+                const modal = document.querySelector('.modal');
+                const battleStyles = document.querySelector('style[data-battle]');
+                if (modal) document.body.removeChild(modal);
+                if (battleStyles) document.head.removeChild(battleStyles);
+                
+                // Restore game view
+                document.getElementById('gameState').style.display = 'block';
+                document.getElementById('loadingOverlay').style.display = 'none';
+                
+                // Update displays
+                window.displayNPCs();
+                window.showNothingFound(`${npcName} has been captured`);
+            }
         };
 
         document.addEventListener('DOMContentLoaded', () => {
