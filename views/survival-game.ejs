@@ -2180,17 +2180,17 @@
                     },
                     body: JSON.stringify({
                         prompt: `Simulate a post-apocalyptic battle between two survivors. 
-                            Return a JSON object with a 'description' field containing a detailed battle narrative, 
-                            and include one or more of these result tokens: [playerWon], [playerLose], [playerDamage:X] where X is the amount of damage taken. 
+                            Return a JSON object with a 'description' field containing a detailed battle narrative.
                             Player attributes: ${JSON.stringify(gameData.playerCharacter.attributes)}. 
                             NPC attributes: ${JSON.stringify(npc.data.attributes)}. 
                             Example output:
                             {
                                 "description": "You engage in a brutal melee with the survivor. Your combat experience gives you the upper hand as you dodge their wild swings and land a solid hit with your baseball bat. The survivor stumbles back, clearly injured.",
-                                "playerWon": true,
-                                "playerDamage": 15
+                                "playerWon": true, // ALWAYS A BOOLEAN, this is true if the player won the battle
+                                "playerDamage": 15 // ALWAYS AN INTEGER, this is the amount of damage the NPC did to the Player
                             }
-                            Only return the JSON object, nothing else.`,
+                            Only return this JSON object structure without the comments, nothing else, no npcDamage, no npcWon. Only return the JSON object.
+                        `,
                         model: window.config.defaultOllamaModel,
                         role: 'battle_simulator',
                         stream: false
@@ -2204,7 +2204,44 @@
                 const battleData = await response.json();
                 const battleResult = JSON.parse(battleData.response.choices[0].message.content);
 
-                // Show battle description in a modal
+                // Check for fatal damage first
+                if (battleResult.playerDamage && battleResult.playerDamage >= gameData.stats.health) {
+                    // Clear game state
+                    localStorage.removeItem('survivalGameState');
+                    // Hide loading overlay
+                    document.getElementById('loadingOverlay').style.display = 'none';
+                    // Show game over screen
+                    document.getElementById('gameOverScreen').style.display = 'flex';
+                    document.getElementById('gameState').style.display = 'none';
+                    document.getElementById('startScreen').style.display = 'none';
+                    return;
+                }
+
+                // Check for player loss
+                if (battleResult.playerLose) {
+                    // Clear game state
+                    localStorage.removeItem('survivalGameState');
+                    // Hide loading overlay
+                    document.getElementById('loadingOverlay').style.display = 'none';
+                    // Show game over screen
+                    document.getElementById('gameOverScreen').style.display = 'flex';
+                    document.getElementById('gameState').style.display = 'none';
+                    document.getElementById('startScreen').style.display = 'none';
+                    return;
+                }
+
+                // Apply non-fatal damage if any
+                if (battleResult.playerDamage) {
+                    gameData.stats.health -= battleResult.playerDamage;
+                    // Update health display directly
+                    const healthValue = document.getElementById('healthValue');
+                    const healthBar = document.getElementById('healthBar');
+                    healthValue.textContent = `${Math.max(0, gameData.stats.health)}/100`;
+                    healthBar.style.width = `${Math.max(0, gameData.stats.health)}%`;
+                    window.saveGameState(gameData);
+                }
+
+                // Show battle description in a modal only if player survived
                 const modal = document.createElement('div');
                 modal.className = 'modal';
                 modal.innerHTML = `
@@ -2277,27 +2314,6 @@
                 `;
                 document.head.appendChild(style);
 
-                // Apply damage if any
-                if (battleResult.playerDamage) {
-                    gameData.stats.health -= battleResult.playerDamage;
-                    if (gameData.stats.health <= 0) {
-                        gameOver();
-                        return;
-                    }
-                    // Update health display directly
-                    const healthValue = document.getElementById('healthValue');
-                    const healthBar = document.getElementById('healthBar');
-                    healthValue.textContent = `${Math.max(0, gameData.stats.health)}/100`;
-                    healthBar.style.width = `${Math.max(0, gameData.stats.health)}%`;
-                    window.saveGameState(gameData);
-                }
-
-                // Handle player loss
-                if (battleResult.playerLose) {
-                    gameOver();
-                    return;
-                }
-
                 window.hideLoading();
 
             } catch (error) {
@@ -2336,29 +2352,19 @@
 
         window.releaseNPC = function(event, npcId, npcName) {
             event.stopPropagation();
-            const gameData = window.loadGameState();
-            const currentNPCs = gameData.areaNPCs.get(gameData.currentLocation.title) || [];
-            const npcIndex = currentNPCs.findIndex(n => n.id === npcId);
             
-            if (npcIndex !== -1) {
-                currentNPCs.splice(npcIndex, 1);
-                gameData.areaNPCs.set(gameData.currentLocation.title, currentNPCs);
-                window.saveGameState(gameData);
-                
-                // Clean up modal and styles
-                const modal = document.querySelector('.modal');
-                const battleStyles = document.querySelector('style[data-battle]');
-                if (modal) document.body.removeChild(modal);
-                if (battleStyles) document.head.removeChild(battleStyles);
-                
-                // Restore game view
-                document.getElementById('gameState').style.display = 'block';
-                document.getElementById('loadingOverlay').style.display = 'none';
-                
-                // Update displays
-                window.displayNPCs();
-                window.showNothingFound(`${npcName} has been released`);
-            }
+            // Clean up modal and styles
+            const modal = document.querySelector('.modal');
+            const battleStyles = document.querySelector('style[data-battle]');
+            if (modal) document.body.removeChild(modal);
+            if (battleStyles) document.head.removeChild(battleStyles);
+            
+            // Restore game view
+            document.getElementById('gameState').style.display = 'block';
+            document.getElementById('loadingOverlay').style.display = 'none';
+            
+            // Just show the message, NPC stays in the area
+            window.showNothingFound(`${npcName} has been released`);
         };
 
         window.captureNPC = function(event, npcId, npcName) {
