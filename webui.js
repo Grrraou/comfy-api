@@ -617,18 +617,18 @@ app.post('/api/ollama', async (req, res) => {
                 "name": "string",
                 "description": "string",
                 "attributes": {
-                    "STR": "number", (Strength - Physical power, 3-18)
-                    "DEX": "number", (Dexterity - Agility and reflexes, 3-18)
-                    "CON": "number", (Constitution - Endurance and health, 3-18)
-                    "INT": "number", (Intelligence - Reasoning and knowledge, 3-18)
-                    "WIS": "number", (Wisdom - Perception and insight, 3-18)
-                    "CHA": "number", (Charisma - Personality and leadership, 3-18)
+                    "STR": "number", (Strength - Physical power, 1-18)
+                    "DEX": "number", (Dexterity - Agility and reflexes, 1-18)
+                    "CON": "number", (Constitution - Endurance and health, 1-18)
+                    "INT": "number", (Intelligence - Reasoning and knowledge, 1-18)
+                    "WIS": "number", (Wisdom - Perception and insight, 1-18)
+                    "CHA": "number", (Charisma - Personality and leadership, 1-18)
                     "gender": "string", (Male or Female)
                     "age": "string", (young, middle-aged, or elderly)
                     "bodyType": "string", (slim, athletic, curvy, muscular, average)
                     "eyeColor": "string",
                     "hairColor": "string",
-                    "ethnicity": "string",
+                    "ethnicity": "string",(caucasian,asian,latino but can also be elf, mutant, alien, robot, monster etc...)
                     "clothing": "string",
                     "weapon": "string",
                     "personality": "string",

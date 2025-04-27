@@ -306,6 +306,88 @@
             margin-top: auto;
         }
 
+        .player-character {
+            background-color: #333333;
+            padding: 1rem;
+            border-radius: 4px;
+            margin-top: 1rem;
+            border-top: 2px solid #ff6b6b;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .player-character:hover {
+            background-color: #3a3a3a;
+        }
+
+        .player-character-image {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            border: 2px solid #ff6b6b;
+            margin: 0 auto 1rem;
+            overflow: hidden;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .player-character-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            object-position: top;
+            transition: transform 0.3s ease;
+        }
+
+        .player-character-image:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 20px rgba(255, 107, 107, 0.5);
+        }
+
+        .player-character-image:hover img {
+            transform: scale(1.1);
+        }
+
+        .player-character-name {
+            color: #ff6b6b;
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 0.5rem;
+        }
+
+        .player-character-attributes {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+
+        .player-character-attribute {
+            background-color: #2a2a2a;
+            padding: 0.5rem;
+            border-radius: 4px;
+            text-align: center;
+        }
+
+        .player-character-attribute-label {
+            color: #ff6b6b;
+            font-size: 0.8rem;
+            margin-bottom: 0.2rem;
+        }
+
+        .player-character-attribute-value {
+            color: #ffffff;
+            font-weight: bold;
+        }
+
+        .player-character-description {
+            color: #cccccc;
+            font-size: 0.9rem;
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid #3a3a3a;
+        }
+
         .stat-item {
             margin-bottom: 0.5rem;
         }
@@ -429,18 +511,58 @@
             bottom: 0;
             display: flex;
             flex-direction: column;
-            justify-content: center;
+            justify-content: flex-start;
             align-items: center;
             background-color: rgba(0, 0, 0, 0.9);
             z-index: 3;
             padding: 2rem;
             text-align: center;
+            overflow-y: auto;
+            min-height: 100vh;
+        }
+
+        .character-form {
+            background-color: #2a2a2a;
+            padding: 2rem;
+            border-radius: 8px;
+            border: 2px solid #ff6b6b;
+            width: 90%;
+            max-width: 600px;
+            margin: 2rem 0;
+            text-align: left;
+            overflow-y: visible;
+        }
+
+        .character-form h3 {
+            color: #ff6b6b;
+            margin-bottom: 1.5rem;
+            text-align: center;
+            top: 0;
+            background-color: #2a2a2a;
+            padding: 1rem 0;
+            z-index: 1;
+        }
+
+        .form-group textarea {
+            width: 100%;
+            padding: 0.5rem;
+            border: 1px solid #3a3a3a;
+            border-radius: 4px;
+            background-color: #1a1a1a;
+            color: #ffffff;
+            resize: vertical;
+            min-height: 100px;
         }
 
         .start-screen h2 {
             color: #ff6b6b;
             font-size: 2.5rem;
             margin-bottom: 1.5rem;
+            top: 0;
+            background-color: rgba(0, 0, 0, 0.9);
+            padding: 1rem 0;
+            z-index: 2;
+            width: 100%;
         }
 
         .start-screen p {
@@ -449,6 +571,11 @@
             line-height: 1.6;
             max-width: 600px;
             font-size: 1.1rem;
+            top: 0;
+            background-color: rgba(0, 0, 0, 0.9);
+            padding: 1rem 0;
+            z-index: 2;
+            width: 100%;
         }
 
         .start-screen .button {
@@ -934,6 +1061,101 @@
             text-transform: uppercase;
             letter-spacing: 1px;
         }
+
+        .character-form {
+            background-color: #2a2a2a;
+            padding: 2rem;
+            border-radius: 8px;
+            border: 2px solid #ff6b6b;
+            width: 90%;
+            max-width: 600px;
+            margin: 2rem 0;
+            text-align: left;
+        }
+
+        .character-form h3 {
+            color: #ff6b6b;
+            margin-bottom: 1.5rem;
+            text-align: center;
+        }
+
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .form-group label {
+            display: block;
+            color: #ffffff;
+            margin-bottom: 0.5rem;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 0.5rem;
+            border: 1px solid #3a3a3a;
+            border-radius: 4px;
+            background-color: #1a1a1a;
+            color: #ffffff;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+        }
+
+        .attribute-slider {
+            width: 100%;
+            margin-top: 0.5rem;
+        }
+
+        .attribute-value {
+            color: #ff6b6b;
+            font-weight: bold;
+            text-align: right;
+        }
+
+        .character-preview {
+            margin-top: 2rem;
+            text-align: center;
+        }
+
+        .character-preview img {
+            width: 200px;
+            height: 200px;
+            border-radius: 50%;
+            border: 2px solid #ff6b6b;
+            margin-bottom: 1rem;
+            object-fit: cover;
+            object-position: top;
+            transition: all 0.3s ease;
+        }
+
+        .character-preview h4 {
+            color: #ff6b6b;
+            margin-bottom: 0.5rem;
+        }
+
+        .character-preview p {
+            color: #cccccc;
+            margin-bottom: 0.5rem;
+        }
+
+        .character-preview img:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 20px rgba(255, 107, 107, 0.5);
+        }
+
+        .generate-button {
+            background-color: #9C27B0;
+            color: white;
+            margin-bottom: 1rem;
+        }
+
+        .generate-button:hover {
+            background-color: #7B1FA2;
+        }
     </style>
 </head>
 <body>
@@ -996,6 +1218,40 @@
                 </div>
             </div>
         </div>
+
+        <div id="playerCharacter" class="player-character" style="display: none;">
+            <div class="player-character-image" onclick="showPlayerDetails()">
+                <img id="playerCharacterImage" src="" alt="Player Character">
+            </div>
+            <div class="player-character-name" id="playerCharacterName"></div>
+            <div class="player-character-attributes">
+                <div class="player-character-attribute">
+                    <div class="player-character-attribute-label">STR</div>
+                    <div class="player-character-attribute-value" id="playerCharacterSTR"></div>
+                </div>
+                <div class="player-character-attribute">
+                    <div class="player-character-attribute-label">DEX</div>
+                    <div class="player-character-attribute-value" id="playerCharacterDEX"></div>
+                </div>
+                <div class="player-character-attribute">
+                    <div class="player-character-attribute-label">CON</div>
+                    <div class="player-character-attribute-value" id="playerCharacterCON"></div>
+                </div>
+                <div class="player-character-attribute">
+                    <div class="player-character-attribute-label">INT</div>
+                    <div class="player-character-attribute-value" id="playerCharacterINT"></div>
+                </div>
+                <div class="player-character-attribute">
+                    <div class="player-character-attribute-label">WIS</div>
+                    <div class="player-character-attribute-value" id="playerCharacterWIS"></div>
+                </div>
+                <div class="player-character-attribute">
+                    <div class="player-character-attribute-label">CHA</div>
+                    <div class="player-character-attribute-value" id="playerCharacterCHA"></div>
+                </div>
+            </div>
+            <div class="player-character-description" id="playerCharacterDescription"></div>
+        </div>
     </div>
 
     <div class="main-content">
@@ -1005,8 +1261,137 @@
             <h2>Welcome to the Post-Apocalyptic World</h2>
             <p>In this game, you'll navigate through a world ravaged by disaster. Your choices will determine your survival. 
                Each location you visit will be uniquely generated, and you'll need to make strategic decisions to stay alive.</p>
-            <p>Click "Start Game" to begin your journey.</p>
-            <button id="startButton" class="button start-button">Start Game</button>
+            
+            <div class="character-form">
+                <h3>Create Your Character</h3>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="playerName">Name</label>
+                        <input type="text" id="playerName" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="playerGender">Gender</label>
+                        <select id="playerGender" required>
+                            <option value="Male">Male</option>
+                            <option value="Female">Female</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="playerAge">Age</label>
+                        <select id="playerAge" required>
+                            <option value="young">Young</option>
+                            <option value="middle-aged">Middle-aged</option>
+                            <option value="elderly">Elderly</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="playerBodyType">Body Type</label>
+                        <select id="playerBodyType" required>
+                            <option value="slim">Slim</option>
+                            <option value="athletic">Athletic</option>
+                            <option value="curvy">Curvy</option>
+                            <option value="muscular">Muscular</option>
+                            <option value="average">Average</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="playerEyeColor">Eye Color</label>
+                        <input type="text" id="playerEyeColor" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="playerHairColor">Hair Color</label>
+                        <input type="text" id="playerHairColor" required>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="playerEthnicity">Ethnicity</label>
+                        <input type="text" id="playerEthnicity" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="playerClothing">Clothing</label>
+                        <input type="text" id="playerClothing" value="Rags" readonly>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="playerWeapon">Weapon</label>
+                        <input type="text" id="playerWeapon" value="None" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label for="playerPersonality">Personality</label>
+                        <input type="text" id="playerPersonality" required>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="playerHeight">Height</label>
+                        <input type="text" id="playerHeight" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="playerWeight">Weight</label>
+                        <input type="text" id="playerWeight" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="playerBackground">Background</label>
+                    <textarea id="playerBackground" rows="3" required></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="playerAdditionalDetails">Additional Details</label>
+                    <textarea id="playerAdditionalDetails" rows="3"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Attributes (Total Points: <span id="totalAttributePoints">0</span>/15)</label>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="playerSTR">Strength (STR)</label>
+                            <input type="range" id="playerSTR" min="0" max="15" value="0" class="attribute-slider">
+                            <span class="attribute-value" id="playerSTRValue">0</span>
+                        </div>
+                        <div class="form-group">
+                            <label for="playerDEX">Dexterity (DEX)</label>
+                            <input type="range" id="playerDEX" min="0" max="15" value="0" class="attribute-slider">
+                            <span class="attribute-value" id="playerDEXValue">0</span>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="playerCON">Constitution (CON)</label>
+                            <input type="range" id="playerCON" min="0" max="15" value="0" class="attribute-slider">
+                            <span class="attribute-value" id="playerCONValue">0</span>
+                        </div>
+                        <div class="form-group">
+                            <label for="playerINT">Intelligence (INT)</label>
+                            <input type="range" id="playerINT" min="0" max="15" value="0" class="attribute-slider">
+                            <span class="attribute-value" id="playerINTValue">0</span>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="playerWIS">Wisdom (WIS)</label>
+                            <input type="range" id="playerWIS" min="0" max="15" value="0" class="attribute-slider">
+                            <span class="attribute-value" id="playerWISValue">0</span>
+                        </div>
+                        <div class="form-group">
+                            <label for="playerCHA">Charisma (CHA)</label>
+                            <input type="range" id="playerCHA" min="0" max="15" value="0" class="attribute-slider">
+                            <span class="attribute-value" id="playerCHAValue">0</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="character-preview">
+                    <img id="playerPreviewImage" src="" alt="Character Preview">
+                    <h4 id="playerPreviewName">Your Character</h4>
+                    <p id="playerPreviewDescription">Character description will appear here</p>
+                </div>
+                <button id="generateCharacterButton" class="button generate-button">Generate Random Character</button>
+                <button id="startButton" class="button start-button">Start Game</button>
+            </div>
         </div>
 
         <div id="gameState" class="game-state">
@@ -1053,10 +1438,53 @@
         </div>
     </div>
 
+    <div id="playerModal" class="npc-modal">
+        <div class="npc-modal-content">
+            <button class="npc-modal-close">&times;</button>
+            <div class="npc-modal-left">
+                <div class="npc-modal-image">
+                    <img src="" alt="Player Character">
+                </div>
+            </div>
+            <div class="npc-modal-right">
+                <div class="npc-modal-header">
+                    <h3 class="npc-modal-name"></h3>
+                    <p class="npc-modal-description"></p>
+                </div>
+                <div class="npc-modal-attributes"></div>
+                <div class="npc-modal-background"></div>
+                <div class="npc-modal-additional"></div>
+            </div>
+        </div>
+    </div>
+
     <script>
         // Add config to window object
         window.config = {
             defaultOllamaModel: '<%= defaultOllamaModel %>'
+        };
+
+        // Initialize game data
+        let gameData = {
+            currentLocation: null,
+            visitedLocations: new Map(),
+            discoveredAreas: new Map(),
+            areaConnections: new Map(),
+            linkPositions: new Map(),
+            areaNPCs: new Map(),
+            maxLinkedAreas: new Map(),
+            nextAreaId: 1,
+            nextNPCId: 1,
+            daysSurvived: 0,
+            currentTime: { hours: 8, minutes: 0 },
+            worldDescription: 'A world ravaged by disaster, where survival is a daily struggle. The environment is harsh, resources are scarce, and danger lurks around every corner.',
+            stats: {
+                health: 100,
+                hunger: 100,
+                thirst: 100,
+                stamina: 100
+            },
+            playerCharacter: null
         };
 
         // Define utility functions in the global scope
@@ -1071,53 +1499,38 @@
                     const areaConnections = new Map(Object.entries(parsed.areaConnections || {}));
                     const linkPositions = new Map(Object.entries(parsed.linkPositions || {}));
                     const areaNPCs = new Map(Object.entries(parsed.areaNPCs || {}));
+                    const maxLinkedAreas = new Map(Object.entries(parsed.maxLinkedAreas || {}));
                     
-                    return {
+                    // Create the game state object
+                    const loadedGameState = {
                         currentLocation: parsed.currentLocation || null,
                         visitedLocations,
                         discoveredAreas,
                         areaConnections,
                         linkPositions,
                         areaNPCs,
+                        maxLinkedAreas,
                         nextAreaId: parsed.nextAreaId || 1,
                         nextNPCId: parsed.nextNPCId || 1,
                         daysSurvived: parsed.daysSurvived || 0,
                         currentTime: parsed.currentTime || { hours: 8, minutes: 0 },
-                        maxLinkedAreas: new Map(Object.entries(parsed.maxLinkedAreas || {})),
                         worldDescription: parsed.worldDescription || 'A world ravaged by disaster, where survival is a daily struggle. The environment is harsh, resources are scarce, and danger lurks around every corner.',
                         stats: parsed.stats || {
                             health: 100,
                             hunger: 100,
                             thirst: 100,
                             stamina: 100
-                        }
+                        },
+                        playerCharacter: parsed.playerCharacter || null
                     };
+
+                    return loadedGameState;
                 }
             } catch (error) {
                 console.error('Error loading game state:', error);
             }
             
-            // Return default state if loading fails
-            return {
-                currentLocation: null,
-                visitedLocations: new Map(),
-                discoveredAreas: new Map(),
-                areaConnections: new Map(),
-                linkPositions: new Map(),
-                areaNPCs: new Map(),
-                nextAreaId: 1,
-                nextNPCId: 1,
-                daysSurvived: 0,
-                currentTime: { hours: 8, minutes: 0 },
-                maxLinkedAreas: new Map(),
-                worldDescription: 'A world ravaged by disaster, where survival is a daily struggle. The environment is harsh, resources are scarce, and danger lurks around every corner.',
-                stats: {
-                    health: 100,
-                    hunger: 100,
-                    thirst: 100,
-                    stamina: 100
-                }
-            };
+            return gameData;
         };
 
         window.saveGameState = function(gameData) {
@@ -1150,13 +1563,14 @@
                     areaConnections: areaConnectionsObj,
                     linkPositions: linkPositionsObj,
                     areaNPCs: areaNPCsObj,
+                    maxLinkedAreas: maxLinkedAreasObj,
                     nextAreaId: gameData.nextAreaId,
                     nextNPCId: gameData.nextNPCId,
                     daysSurvived: gameData.daysSurvived,
                     currentTime: gameData.currentTime,
-                    maxLinkedAreas: maxLinkedAreasObj,
                     worldDescription: gameData.worldDescription,
-                    stats: gameData.stats
+                    stats: gameData.stats,
+                    playerCharacter: gameData.playerCharacter
                 };
 
                 // Save to localStorage
@@ -1197,6 +1611,10 @@
             npcContainer.innerHTML = '';
 
             const gameData = window.loadGameState();
+            if (!gameData.currentLocation || !gameData.areaNPCs) {
+                return;
+            }
+
             const currentNPCs = gameData.areaNPCs.get(gameData.currentLocation.title) || [];
             currentNPCs.forEach(npc => {
                 const npcWrapper = document.createElement('div');
@@ -1314,7 +1732,6 @@
             modal.style.display = 'flex';
         };
 
-        // Define NPC action functions in the global scope
         window.regenerateNPCImage = async function(event, npcId) {
             event.stopPropagation();
             try {
@@ -1455,6 +1872,8 @@
         };
 
         document.addEventListener('DOMContentLoaded', () => {
+            const startScreen = document.getElementById('startScreen');
+            const gameState = document.getElementById('gameState');
             const startButton = document.getElementById('startButton');
             const resetButton = document.getElementById('resetButton');
             const exploreButton = document.getElementById('exploreButton');
@@ -1462,8 +1881,7 @@
             const sleepButton = document.getElementById('sleepButton');
             const searchFoodButton = document.getElementById('searchFoodButton');
             const searchWaterButton = document.getElementById('searchWaterButton');
-            const startScreen = document.getElementById('startScreen');
-            const gameState = document.getElementById('gameState');
+            const searchSurvivorButton = document.getElementById('searchSurvivorButton');
             const locationImage = document.getElementById('locationImage');
             const locationTitle = document.getElementById('locationTitle');
             const locationText = document.getElementById('locationText');
@@ -1489,13 +1907,18 @@
             const mainContent = document.querySelector('.main-content');
 
             // Load game state from localStorage
-            let gameData = window.loadGameState();
+            gameData = window.loadGameState();
 
             // If there's saved game state, show the game screen
             if (gameData.currentLocation) {
                 startScreen.style.display = 'none';
                 gameState.style.display = 'block';
                 displayCurrentLocation();
+            }
+
+            // Update player character display if it exists
+            if (gameData.playerCharacter) {
+                updatePlayerCharacterDisplay();
             }
 
             function formatTime(hours, minutes) {
@@ -1975,10 +2398,62 @@
             });
 
             startButton.addEventListener('click', async () => {
+                // Validate form
+                const formInputs = playerForm.querySelectorAll('input[required], select[required], textarea[required]');
+                let isValid = true;
+                formInputs.forEach(input => {
+                    if (!input.value.trim()) {
+                        isValid = false;
+                        input.style.borderColor = '#ff4444';
+                    } else {
+                        input.style.borderColor = '';
+                    }
+                });
+
+                if (!isValid) {
+                    alert('Please fill in all required fields');
+                    return;
+                }
+
+                // Create player character data
+                const playerCharacter = {
+                    name: document.getElementById('playerName').value,
+                    description: document.getElementById('playerBackground').value,
+                    attributes: {
+                        STR: parseInt(document.getElementById('playerSTR').value),
+                        DEX: parseInt(document.getElementById('playerDEX').value),
+                        CON: parseInt(document.getElementById('playerCON').value),
+                        INT: parseInt(document.getElementById('playerINT').value),
+                        WIS: parseInt(document.getElementById('playerWIS').value),
+                        CHA: parseInt(document.getElementById('playerCHA').value),
+                        gender: document.getElementById('playerGender').value,
+                        age: document.getElementById('playerAge').value,
+                        bodyType: document.getElementById('playerBodyType').value,
+                        eyeColor: document.getElementById('playerEyeColor').value,
+                        hairColor: document.getElementById('playerHairColor').value,
+                        ethnicity: document.getElementById('playerEthnicity').value,
+                        clothing: document.getElementById('playerClothing').value,
+                        weapon: document.getElementById('playerWeapon').value,
+                        personality: document.getElementById('playerPersonality').value,
+                        height: document.getElementById('playerHeight').value,
+                        weight: document.getElementById('playerWeight').value
+                    },
+                    background: document.getElementById('playerBackground').value,
+                    additionalDetails: document.getElementById('playerAdditionalDetails').value,
+                    imageUrl: playerPreviewImage.src
+                };
+
+                // Save player character data to game state
+                gameData.playerCharacter = playerCharacter;
+                window.saveGameState(gameData);
+
+                // Update player character display
+                updatePlayerCharacterDisplay();
+
                 startScreen.style.display = 'none';
                 gameState.style.display = 'block';
                 await generateInitialLocation();
-                advanceTime(1); // Starting the game takes 1 hour
+                advanceTime(1);
             });
 
             resetButton.addEventListener('click', async () => {
@@ -1994,11 +2469,11 @@
                         areaConnections: new Map(),
                         linkPositions: new Map(),
                         areaNPCs: new Map(),
+                        maxLinkedAreas: new Map(),
                         nextAreaId: 1,
                         nextNPCId: 1,
                         daysSurvived: 0,
                         currentTime: { hours: 8, minutes: 0 },
-                        maxLinkedAreas: new Map(),
                         worldDescription: 'A world ravaged by disaster, where survival is a daily struggle. The environment is harsh, resources are scarce, and danger lurks around every corner.',
                         stats: {
                             health: 100,
@@ -2164,6 +2639,7 @@
 
                     // Initialize connections for the initial area
                     gameData.areaConnections.set(initialArea.title, []);
+                    gameData.areaNPCs.set(initialArea.title, []);
                     
                     // Set random max linked areas (1-3) for the initial location
                     gameData.maxLinkedAreas.set(initialArea.title, Math.floor(Math.random() * 3) + 1);
@@ -2335,11 +2811,11 @@
                     areaConnections: new Map(),
                     linkPositions: new Map(),
                     areaNPCs: new Map(),
+                    maxLinkedAreas: new Map(),
                     nextAreaId: 1,
                     nextNPCId: 1,
                     daysSurvived: 0,
                     currentTime: { hours: 8, minutes: 0 },
-                    maxLinkedAreas: new Map(),
                     worldDescription: 'A world ravaged by disaster, where survival is a daily struggle. The environment is harsh, resources are scarce, and danger lurks around every corner.',
                     stats: {
                         health: 100,
@@ -2401,6 +2877,362 @@
             document.getElementById('npcModal').addEventListener('click', (e) => {
                 if (e.target === document.getElementById('npcModal')) {
                     document.getElementById('npcModal').style.display = 'none';
+                }
+            });
+
+            // Add character creation form event listeners
+            const playerForm = document.querySelector('.character-form');
+            const generateCharacterButton = document.getElementById('generateCharacterButton');
+            const playerPreviewImage = document.getElementById('playerPreviewImage');
+            const playerPreviewName = document.getElementById('playerPreviewName');
+            const playerPreviewDescription = document.getElementById('playerPreviewDescription');
+
+            // Function to calculate and update total attribute points
+            function updateTotalAttributePoints() {
+                const str = parseInt(document.getElementById('playerSTR').value);
+                const dex = parseInt(document.getElementById('playerDEX').value);
+                const con = parseInt(document.getElementById('playerCON').value);
+                const int = parseInt(document.getElementById('playerINT').value);
+                const wis = parseInt(document.getElementById('playerWIS').value);
+                const cha = parseInt(document.getElementById('playerCHA').value);
+                
+                const total = str + dex + con + int + wis + cha;
+                document.getElementById('totalAttributePoints').textContent = total;
+                
+                // Disable/enable start button based on total points
+                const startButton = document.getElementById('startButton');
+                startButton.disabled = total !== 15;
+                startButton.title = total !== 15 ? `Total points must be exactly 15 (current: ${total})` : 'Start Game';
+            }
+
+            // Update attribute value displays and total points
+            const attributeSliders = document.querySelectorAll('.attribute-slider');
+            attributeSliders.forEach(slider => {
+                const valueDisplay = document.getElementById(`${slider.id}Value`);
+                valueDisplay.textContent = slider.value;
+                slider.addEventListener('input', () => {
+                    valueDisplay.textContent = slider.value;
+                    updateTotalAttributePoints();
+                });
+            });
+
+            // Initial update of total points
+            updateTotalAttributePoints();
+
+            // Generate random character
+            generateCharacterButton.addEventListener('click', async () => {
+                try {
+                    window.showLoading('Generating Character', 'Creating a unique character for you...');
+
+                    const response = await fetch('/api/ollama', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            prompt: 'Generate a post-apocalyptic survivor character with D&D-style attributes',
+                            model: window.config.defaultOllamaModel,
+                            role: 'character_builder',
+                            stream: false
+                        })
+                    });
+
+                    if (!response.ok) {
+                        throw new Error('Failed to generate character');
+                    }
+
+                    const characterData = await response.json();
+                    const npcData = JSON.parse(characterData.response.choices[0].message.content);
+
+                    // Update form fields with generated character data
+                    document.getElementById('playerName').value = npcData.name;
+                    document.getElementById('playerGender').value = npcData.attributes.gender;
+                    document.getElementById('playerAge').value = npcData.attributes.age;
+                    document.getElementById('playerBodyType').value = npcData.attributes.bodyType;
+                    document.getElementById('playerEyeColor').value = npcData.attributes.eyeColor;
+                    document.getElementById('playerHairColor').value = npcData.attributes.hairColor;
+                    document.getElementById('playerEthnicity').value = npcData.attributes.ethnicity;
+                    document.getElementById('playerClothing').value = npcData.attributes.clothing;
+                    document.getElementById('playerWeapon').value = npcData.attributes.weapon;
+                    document.getElementById('playerPersonality').value = npcData.attributes.personality;
+                    document.getElementById('playerHeight').value = npcData.attributes.height;
+                    document.getElementById('playerWeight').value = npcData.attributes.weight;
+                    document.getElementById('playerBackground').value = npcData.background;
+                    document.getElementById('playerAdditionalDetails').value = npcData.additionalDetails;
+
+                    // Update attribute sliders
+                    document.getElementById('playerSTR').value = npcData.attributes.STR;
+                    document.getElementById('playerDEX').value = npcData.attributes.DEX;
+                    document.getElementById('playerCON').value = npcData.attributes.CON;
+                    document.getElementById('playerINT').value = npcData.attributes.INT;
+                    document.getElementById('playerWIS').value = npcData.attributes.WIS;
+                    document.getElementById('playerCHA').value = npcData.attributes.CHA;
+
+                    // Update attribute value displays
+                    document.getElementById('playerSTRValue').textContent = npcData.attributes.STR;
+                    document.getElementById('playerDEXValue').textContent = npcData.attributes.DEX;
+                    document.getElementById('playerCONValue').textContent = npcData.attributes.CON;
+                    document.getElementById('playerINTValue').textContent = npcData.attributes.INT;
+                    document.getElementById('playerWISValue').textContent = npcData.attributes.WIS;
+                    document.getElementById('playerCHAValue').textContent = npcData.attributes.CHA;
+
+                    // Update preview
+                    playerPreviewName.textContent = npcData.name;
+                    playerPreviewDescription.textContent = npcData.description;
+
+                    // Generate character image
+                    const promptResponse = await fetch('/api/ollama', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            prompt: JSON.stringify(npcData),
+                            model: window.config.defaultOllamaModel,
+                            role: 'sd-prompt',
+                            stream: false
+                        })
+                    });
+
+                    if (!promptResponse.ok) {
+                        throw new Error('Failed to generate image prompt');
+                    }
+
+                    const promptData = await promptResponse.json();
+                    const imagePrompt = promptData.response.choices[0].message.content;
+
+                    const imageResponse = await fetch('/api/generate-image', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            prompt: imagePrompt,
+                            areaId: 'player_character',
+                            width: 576,
+                            height: 1024
+                        })
+                    });
+
+                    if (!imageResponse.ok) {
+                        throw new Error('Failed to generate character image');
+                    }
+
+                    const imageData = await imageResponse.json();
+                    if (!imageData.success) {
+                        throw new Error(imageData.error || 'Failed to generate image');
+                    }
+
+                    const timestamp = new Date().getTime();
+                    playerPreviewImage.src = (imageData.imageUrl.startsWith('/') ? imageData.imageUrl : `/${imageData.imageUrl}`) + `?t=${timestamp}`;
+
+                    window.hideLoading();
+                } catch (error) {
+                    console.error('Error generating character:', error);
+                    window.hideLoading();
+                    alert(`Error: ${error.message}\nPlease try again.`);
+                }
+            });
+
+            // Add player character display update
+            function updatePlayerCharacterDisplay() {
+                const playerCharacter = gameData.playerCharacter;
+                if (!playerCharacter) return;
+
+                const playerCharacterElement = document.getElementById('playerCharacter');
+                if (!playerCharacterElement) return;
+
+                playerCharacterElement.style.display = 'block';
+
+                const imageElement = document.getElementById('playerCharacterImage');
+                const nameElement = document.getElementById('playerCharacterName');
+                const strElement = document.getElementById('playerCharacterSTR');
+                const dexElement = document.getElementById('playerCharacterDEX');
+                const conElement = document.getElementById('playerCharacterCON');
+                const intElement = document.getElementById('playerCharacterINT');
+                const wisElement = document.getElementById('playerCharacterWIS');
+                const chaElement = document.getElementById('playerCharacterCHA');
+                const descriptionElement = document.getElementById('playerCharacterDescription');
+
+                if (imageElement) imageElement.src = playerCharacter.imageUrl;
+                if (nameElement) nameElement.textContent = playerCharacter.name;
+                if (strElement) strElement.textContent = playerCharacter.attributes.STR;
+                if (dexElement) dexElement.textContent = playerCharacter.attributes.DEX;
+                if (conElement) conElement.textContent = playerCharacter.attributes.CON;
+                if (intElement) intElement.textContent = playerCharacter.attributes.INT;
+                if (wisElement) wisElement.textContent = playerCharacter.attributes.WIS;
+                if (chaElement) chaElement.textContent = playerCharacter.attributes.CHA;
+                if (descriptionElement) descriptionElement.textContent = playerCharacter.description;
+            }
+
+            // Update loadGameState to properly handle player character data
+            window.loadGameState = function() {
+                try {
+                    const savedState = localStorage.getItem('survivalGameState');
+                    if (savedState) {
+                        const parsed = JSON.parse(savedState);
+                        // Initialize Maps from saved data
+                        const visitedLocations = new Map(Object.entries(parsed.visitedLocations || {}));
+                        const discoveredAreas = new Map(Object.entries(parsed.discoveredAreas || {}));
+                        const areaConnections = new Map(Object.entries(parsed.areaConnections || {}));
+                        const linkPositions = new Map(Object.entries(parsed.linkPositions || {}));
+                        const areaNPCs = new Map(Object.entries(parsed.areaNPCs || {}));
+                        const maxLinkedAreas = new Map(Object.entries(parsed.maxLinkedAreas || {}));
+                        
+                        // Create the game state object
+                        const gameState = {
+                            currentLocation: parsed.currentLocation || null,
+                            visitedLocations,
+                            discoveredAreas,
+                            areaConnections,
+                            linkPositions,
+                            areaNPCs,
+                            maxLinkedAreas,
+                            nextAreaId: parsed.nextAreaId || 1,
+                            nextNPCId: parsed.nextNPCId || 1,
+                            daysSurvived: parsed.daysSurvived || 0,
+                            currentTime: parsed.currentTime || { hours: 8, minutes: 0 },
+                            worldDescription: parsed.worldDescription || 'A world ravaged by disaster, where survival is a daily struggle. The environment is harsh, resources are scarce, and danger lurks around every corner.',
+                            stats: parsed.stats || {
+                                health: 100,
+                                hunger: 100,
+                                thirst: 100,
+                                stamina: 100
+                            },
+                            playerCharacter: parsed.playerCharacter || null
+                        };
+
+                        return gameState;
+                    }
+                } catch (error) {
+                    console.error('Error loading game state:', error);
+                }
+                
+                // Return default state if loading fails
+                return {
+                    currentLocation: null,
+                    visitedLocations: new Map(),
+                    discoveredAreas: new Map(),
+                    areaConnections: new Map(),
+                    linkPositions: new Map(),
+                    areaNPCs: new Map(),
+                    maxLinkedAreas: new Map(),
+                    nextAreaId: 1,
+                    nextNPCId: 1,
+                    daysSurvived: 0,
+                    currentTime: { hours: 8, minutes: 0 },
+                    worldDescription: 'A world ravaged by disaster, where survival is a daily struggle. The environment is harsh, resources are scarce, and danger lurks around every corner.',
+                    stats: {
+                        health: 100,
+                        hunger: 100,
+                        thirst: 100,
+                        stamina: 100
+                    },
+                    playerCharacter: null
+                };
+            };
+
+            // Add player character modal functionality
+            window.showPlayerDetails = function() {
+                const gameData = window.loadGameState();
+                if (!gameData.playerCharacter) return;
+
+                const modal = document.getElementById('playerModal');
+                const modalImage = modal.querySelector('.npc-modal-image img');
+                const modalName = modal.querySelector('.npc-modal-name');
+                const modalDescription = modal.querySelector('.npc-modal-description');
+                const modalAttributes = modal.querySelector('.npc-modal-attributes');
+                const modalBackground = modal.querySelector('.npc-modal-background');
+                const modalAdditional = modal.querySelector('.npc-modal-additional');
+
+                modalImage.src = gameData.playerCharacter.imageUrl;
+                modalImage.alt = gameData.playerCharacter.name;
+                modalName.textContent = gameData.playerCharacter.name;
+                modalDescription.textContent = gameData.playerCharacter.description;
+
+                // Clear previous attributes
+                modalAttributes.innerHTML = '';
+
+                // Add D&D-style attributes
+                const dndAttributes = [
+                    { key: 'STR', label: 'Strength', value: gameData.playerCharacter.attributes.STR },
+                    { key: 'DEX', label: 'Dexterity', value: gameData.playerCharacter.attributes.DEX },
+                    { key: 'CON', label: 'Constitution', value: gameData.playerCharacter.attributes.CON },
+                    { key: 'INT', label: 'Intelligence', value: gameData.playerCharacter.attributes.INT },
+                    { key: 'WIS', label: 'Wisdom', value: gameData.playerCharacter.attributes.WIS },
+                    { key: 'CHA', label: 'Charisma', value: gameData.playerCharacter.attributes.CHA },
+                    { key: 'clothing', label: 'Clothing', value: gameData.playerCharacter.attributes.clothing },
+                    { key: 'weapon', label: 'Weapon', value: gameData.playerCharacter.attributes.weapon }
+                ];
+
+                // Add character attributes
+                const characterAttributes = [
+                    { key: 'gender', label: 'Gender', value: gameData.playerCharacter.attributes.gender },
+                    { key: 'age', label: 'Age', value: gameData.playerCharacter.attributes.age },
+                    { key: 'bodyType', label: 'Body Type', value: gameData.playerCharacter.attributes.bodyType },
+                    { key: 'eyeColor', label: 'Eye Color', value: gameData.playerCharacter.attributes.eyeColor },
+                    { key: 'hairColor', label: 'Hair Color', value: gameData.playerCharacter.attributes.hairColor },
+                    { key: 'ethnicity', label: 'Ethnicity', value: gameData.playerCharacter.attributes.ethnicity },
+                    { key: 'personality', label: 'Personality', value: gameData.playerCharacter.attributes.personality },
+                    { key: 'height', label: 'Height', value: gameData.playerCharacter.attributes.height },
+                    { key: 'weight', label: 'Weight', value: gameData.playerCharacter.attributes.weight }
+                ];
+
+                // Create D&D attributes section
+                const dndSection = document.createElement('div');
+                dndSection.className = 'npc-modal-section';
+                dndSection.innerHTML = '<h4 class="npc-modal-section-title">Attributes</h4>';
+                
+                dndAttributes.forEach(attr => {
+                    const attributeDiv = document.createElement('div');
+                    attributeDiv.className = 'npc-modal-attribute';
+                    const percentage = (attr.value / 20) * 100;
+                    attributeDiv.innerHTML = `
+                        <div class="npc-modal-attribute-label">${attr.label} (${attr.key})</div>
+                        <div class="npc-modal-attribute-value">${attr.value}</div>
+                        <div class="npc-modal-attribute-bar">
+                            <div class="npc-modal-attribute-fill" style="width: ${percentage}%"></div>
+                        </div>
+                    `;
+                    dndSection.appendChild(attributeDiv);
+                });
+
+                // Create character attributes section
+                const charSection = document.createElement('div');
+                charSection.className = 'npc-modal-section';
+                charSection.innerHTML = '<h4 class="npc-modal-section-title">Physical Characteristics</h4>';
+                
+                characterAttributes.forEach(attr => {
+                    if (attr.value) {
+                        const attributeDiv = document.createElement('div');
+                        attributeDiv.className = 'npc-modal-attribute';
+                        attributeDiv.innerHTML = `
+                            <div class="npc-modal-attribute-label">${attr.label}</div>
+                            <div class="npc-modal-attribute-value">${attr.value}</div>
+                        `;
+                        charSection.appendChild(attributeDiv);
+                    }
+                });
+
+                // Add sections to modal
+                modalAttributes.appendChild(dndSection);
+                modalAttributes.appendChild(charSection);
+
+                modalBackground.textContent = gameData.playerCharacter.background;
+                modalAdditional.textContent = gameData.playerCharacter.additionalDetails;
+
+                modal.style.display = 'flex';
+            };
+
+            // Close player modal when clicking the close button
+            document.querySelector('#playerModal .npc-modal-close').addEventListener('click', () => {
+                document.getElementById('playerModal').style.display = 'none';
+            });
+
+            // Close player modal when clicking outside
+            document.getElementById('playerModal').addEventListener('click', (e) => {
+                if (e.target === document.getElementById('playerModal')) {
+                    document.getElementById('playerModal').style.display = 'none';
                 }
             });
         });
