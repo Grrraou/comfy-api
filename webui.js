@@ -995,6 +995,66 @@ app.post('/api/generate-location', async (req, res) => {
     }
 });
 
+// API endpoint for generating items
+app.post('/api/generate-item', async (req, res) => {
+    try {
+        const { context, difficulty } = req.body;
+        
+        // Call Ollama API to generate item
+        const response = await axios.post(`${config.ollamaUrl}/api/generate`, {
+            model: config.defaultOllamaModel,
+            prompt: `Generate a unique post-apocalyptic item based on the context and difficulty level. 
+                    Context: ${context}. 
+                    Difficulty: ${difficulty}.
+                    Return the response in valid JSON format with 'name', 'type', and 'description' fields.
+                    The type must be one of: weapon, clothing (should be full set of cloth and not just one item), 
+                    or consumable (something that could restore health, hunger, thirst or stamina).
+                    Example format: {
+                        "name": "Rusty Machete",
+                        "type": "weapon",
+                        "description": "A description here"
+                    }`,
+            stream: false
+        });
+
+        console.log('Ollama response:', response.data);
+
+        // Try to parse the response
+        let itemData;
+        try {
+            // First try to parse the entire response
+            itemData = JSON.parse(response.data.response);
+        } catch (e) {
+            console.error('Failed to parse full response, trying to extract JSON:', e);
+            // If that fails, try to extract JSON from the response text
+            const jsonMatch = response.data.response.match(/\{[\s\S]*\}/);
+            if (jsonMatch) {
+                itemData = JSON.parse(jsonMatch[0]);
+            } else {
+                throw new Error('Could not find valid JSON in response');
+            }
+        }
+
+        // Validate the response structure
+        if (!itemData.name || !itemData.type || !itemData.description) {
+            throw new Error('Invalid item data structure');
+        }
+
+        // Validate item type
+        if (!['weapon', 'clothing', 'consumable'].includes(itemData.type)) {
+            throw new Error('Invalid item type');
+        }
+
+        res.json(itemData);
+    } catch (error) {
+        console.error('Error generating item:', error);
+        res.status(500).json({ 
+            error: 'Failed to generate item',
+            details: error.message
+        });
+    }
+});
+
 app.listen(port, () => {
     console.log(`Web UI server running at http://localhost:${port}`);
 }); 

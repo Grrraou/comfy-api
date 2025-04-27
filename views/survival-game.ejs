@@ -1223,6 +1223,134 @@
             transform: translateY(0);
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
         }
+
+        .inventory {
+            background-color: #333333;
+            padding: 1rem;
+            border-radius: 4px;
+            margin-top: 1rem;
+            border-top: 2px solid #ff6b6b;
+        }
+
+        .inventory-title {
+            color: #ff6b6b;
+            font-size: 1.2rem;
+            margin-bottom: 1rem;
+            text-align: center;
+        }
+
+        .inventory-items {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .inventory-item {
+            background-color: #2a2a2a;
+            padding: 0.5rem;
+            border-radius: 4px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .inventory-item:hover {
+            background-color: #3a3a3a;
+            transform: scale(1.05);
+        }
+
+        .inventory-item-image {
+            width: 50px;
+            height: 50px;
+            margin: 0 auto 0.5rem;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .inventory-item-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .inventory-item-name {
+            color: #ff6b6b;
+            font-size: 0.8rem;
+            margin-bottom: 0.2rem;
+        }
+
+        .inventory-item-type {
+            color: #cccccc;
+            font-size: 0.7rem;
+        }
+
+        .inventory-item-actions {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            display: none;
+            z-index: 101;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+
+        .inventory-item:hover .inventory-item-actions,
+        .inventory-item-actions:hover {
+            display: block;
+        }
+
+        .inventory-item-action-button {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            border: none;
+            background-color: #2a2a2a;
+            color: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            position: absolute;
+            pointer-events: auto;
+        }
+
+        .inventory-item-action-button:hover {
+            background-color: #ff6b6b;
+            transform: scale(1.2);
+        }
+
+        .inventory-item-action-button.equip {
+            top: -30px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .scavenge-button {
+            width: 100%;
+            margin-top: 1rem;
+            background-color: #ff6b6b;
+            color: white;
+            border: none;
+            padding: 0.5rem;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .scavenge-button:hover {
+            background-color: #ff4444;
+        }
+
+        .scavenge-button:disabled {
+            background-color: #666666;
+            cursor: not-allowed;
+        }
     </style>
 </head>
 <body>
@@ -1282,6 +1410,14 @@
                     <div id="staminaBar" class="stat-bar-fill stamina-bar" style="width: 100%"></div>
                 </div>
             </div>
+        </div>
+
+        <div id="inventory" class="inventory">
+            <h3 class="inventory-title">Inventory</h3>
+            <div id="inventoryItems" class="inventory-items">
+                <!-- Inventory items will be displayed here -->
+            </div>
+            <button id="scavengeButton" class="button scavenge-button">Scavenge (2h, 20 stamina)</button>
         </div>
 
         <div id="playerCharacter" class="player-character" style="display: none;">
@@ -1555,7 +1691,9 @@
                 stamina: 100
             },
             playerCharacter: null,
-            difficulty: 1
+            difficulty: 1,
+            inventory: new Map(), // Add inventory Map
+            nextItemId: 1 // Add nextItemId counter
         };
 
         // Define utility functions in the global scope
@@ -1571,9 +1709,15 @@
                     const linkPositions = new Map(Object.entries(parsed.linkPositions || {}));
                     const areaNPCs = new Map(Object.entries(parsed.areaNPCs || {}));
                     const maxLinkedAreas = new Map(Object.entries(parsed.maxLinkedAreas || {}));
+                    const inventory = new Map();
+                    if (parsed.inventory) {
+                        Object.entries(parsed.inventory).forEach(([key, value]) => {
+                            inventory.set(parseInt(key), value);
+                        });
+                    }
                     
                     // Create the game state object
-                    const loadedGameState = {
+                    const gameState = {
                         currentLocation: parsed.currentLocation || null,
                         visitedLocations,
                         discoveredAreas,
@@ -1593,16 +1737,42 @@
                             stamina: 100
                         },
                         playerCharacter: parsed.playerCharacter || null,
-                        difficulty: parsed.difficulty || 1
+                        difficulty: parsed.difficulty || 1,
+                        inventory,
+                        nextItemId: parsed.nextItemId || 1
                     };
 
-                    return loadedGameState;
+                    return gameState;
                 }
             } catch (error) {
                 console.error('Error loading game state:', error);
             }
             
-            return gameData;
+            // Return default state if loading fails
+            return {
+                currentLocation: null,
+                visitedLocations: new Map(),
+                discoveredAreas: new Map(),
+                areaConnections: new Map(),
+                linkPositions: new Map(),
+                areaNPCs: new Map(),
+                maxLinkedAreas: new Map(),
+                nextAreaId: 1,
+                nextNPCId: 1,
+                daysSurvived: 0,
+                currentTime: { hours: 8, minutes: 0 },
+                worldDescription: 'A world ravaged by disaster, where survival is a daily struggle. The environment is harsh, resources are scarce, and danger lurks around every corner.',
+                stats: {
+                    health: 100,
+                    hunger: 100,
+                    thirst: 100,
+                    stamina: 100
+                },
+                playerCharacter: null,
+                difficulty: 1,
+                inventory: new Map(),
+                nextItemId: 1
+            };
         };
 
         window.saveGameState = function(gameData) {
@@ -1626,6 +1796,10 @@
                 const areaNPCsObj = gameData.areaNPCs.size > 0
                     ? Object.fromEntries(gameData.areaNPCs)
                     : {};
+                const inventoryObj = {};
+                gameData.inventory.forEach((value, key) => {
+                    inventoryObj[key] = value;
+                });
 
                 // Create the state object
                 const stateToSave = {
@@ -1643,7 +1817,9 @@
                     worldDescription: gameData.worldDescription,
                     stats: gameData.stats,
                     playerCharacter: gameData.playerCharacter,
-                    difficulty: gameData.difficulty
+                    difficulty: gameData.difficulty,
+                    inventory: inventoryObj,
+                    nextItemId: gameData.nextItemId
                 };
 
                 // Save to localStorage
@@ -1980,6 +2156,8 @@
             const menuToggle = document.getElementById('menuToggle');
             const sidebar = document.querySelector('.sidebar');
             const mainContent = document.querySelector('.main-content');
+            const scavengeButton = document.getElementById('scavengeButton');
+            const inventoryItems = document.getElementById('inventoryItems');
 
             // Load game state from localStorage
             gameData = window.loadGameState();
@@ -1989,6 +2167,7 @@
                 startScreen.style.display = 'none';
                 gameState.style.display = 'block';
                 displayCurrentLocation();
+                updateInventoryDisplay(); // Add this line to update inventory display
             }
 
             // Update player character display if it exists
@@ -2070,6 +2249,12 @@
                 searchWaterButton.title = searchWaterButton.disabled ? 
                     `Not enough stamina (${gameData.stats.stamina}/10 required)` : 
                     'Search for water (10 stamina)';
+
+                // Update scavenge button state based on stamina
+                scavengeButton.disabled = gameData.stats.stamina < 20;
+                scavengeButton.title = scavengeButton.disabled ? 
+                    `Not enough stamina (${gameData.stats.stamina}/20 required)` : 
+                    'Scavenge for items (2h, 20 stamina)';
             }
 
             function updateStats(hours) {
@@ -2559,7 +2744,9 @@
                             stamina: 100
                         },
                         playerCharacter: null,
-                        difficulty: 1
+                        difficulty: 1,
+                        inventory: new Map(),
+                        nextItemId: 1
                     };
                     
                     // Force reload the page after a short delay to ensure localStorage is cleared
@@ -2909,7 +3096,9 @@
                         stamina: 100
                     },
                     playerCharacter: null,
-                    difficulty: 1
+                    difficulty: 1,
+                    inventory: new Map(),
+                    nextItemId: 1
                 };
                 
                 // Hide game over screen and show start screen
@@ -3165,6 +3354,12 @@
                         const linkPositions = new Map(Object.entries(parsed.linkPositions || {}));
                         const areaNPCs = new Map(Object.entries(parsed.areaNPCs || {}));
                         const maxLinkedAreas = new Map(Object.entries(parsed.maxLinkedAreas || {}));
+                        const inventory = new Map();
+                        if (parsed.inventory) {
+                            Object.entries(parsed.inventory).forEach(([key, value]) => {
+                                inventory.set(parseInt(key), value);
+                            });
+                        }
                         
                         // Create the game state object
                         const gameState = {
@@ -3187,7 +3382,9 @@
                                 stamina: 100
                             },
                             playerCharacter: parsed.playerCharacter || null,
-                            difficulty: parsed.difficulty || 1
+                            difficulty: parsed.difficulty || 1,
+                            inventory,
+                            nextItemId: parsed.nextItemId || 1
                         };
 
                         return gameState;
@@ -3217,7 +3414,9 @@
                         stamina: 100
                     },
                     playerCharacter: null,
-                    difficulty: 1
+                    difficulty: 1,
+                    inventory: new Map(),
+                    nextItemId: 1
                 };
             };
 
@@ -3396,6 +3595,264 @@
                     document.getElementById('playerModal').style.display = 'none';
                 }
             });
+
+            // Add inventory management functions
+            function updateInventoryDisplay() {
+                // Clear existing items
+                inventoryItems.innerHTML = '';
+
+                // Update inventory title with current/max size
+                const maxSize = calculateMaxInventorySize();
+                const currentSize = gameData.inventory.size;
+                document.querySelector('.inventory-title').textContent = `Inventory (${currentSize}/${maxSize})`;
+
+                // Add each item to the display
+                gameData.inventory.forEach((item, id) => {
+                    const itemElement = document.createElement('div');
+                    itemElement.className = 'inventory-item';
+                    const equippedText = item.equipped ? ' (equipped)' : '';
+                    itemElement.innerHTML = `
+                        <div class="inventory-item-image">
+                            <img src="${item.imageUrl}" alt="${item.name}">
+                        </div>
+                        <div class="inventory-item-name">${item.name}${equippedText}</div>
+                        <div class="inventory-item-type">${item.type}</div>
+                        <div class="inventory-item-actions">
+                            <button class="inventory-item-action-button equip" title="Equip" onclick="equipItem(event, ${item.id})">👕</button>
+                            <button class="inventory-item-action-button discard" title="Discard" onclick="discardItem(event, ${item.id})">🗑️</button>
+                        </div>
+                    `;
+                    itemElement.onclick = (e) => {
+                        if (!e.target.closest('.inventory-item-action-button')) {
+                            showItemDetails(item);
+                        }
+                    };
+                    inventoryItems.appendChild(itemElement);
+                });
+            }
+
+            function showItemDetails(item) {
+                const modal = document.createElement('div');
+                modal.className = 'npc-modal';
+                modal.innerHTML = `
+                    <div class="npc-modal-content">
+                        <button class="npc-modal-close">&times;</button>
+                        <div class="npc-modal-left">
+                            <div class="npc-modal-image">
+                                <img src="${item.imageUrl}" alt="${item.name}">
+                            </div>
+                        </div>
+                        <div class="npc-modal-right">
+                            <div class="npc-modal-header">
+                                <h3 class="npc-modal-name">${item.name}</h3>
+                                <p class="npc-modal-description">${item.description}</p>
+                            </div>
+                            <div class="npc-modal-attributes">
+                                <div class="npc-modal-attribute">
+                                    <div class="npc-modal-attribute-label">Type</div>
+                                    <div class="npc-modal-attribute-value">${item.type}</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+
+                // Add close button functionality
+                modal.querySelector('.npc-modal-close').onclick = () => modal.remove();
+                modal.onclick = (e) => {
+                    if (e.target === modal) modal.remove();
+                };
+
+                document.body.appendChild(modal);
+            }
+
+            // Add scavenge action handler
+            scavengeButton.addEventListener('click', async () => {
+                if (gameData.stats.stamina < 20) {
+                    window.showNothingFound('Not enough stamina to scavenge (20 required)');
+                    return;
+                }
+
+                const maxSize = calculateMaxInventorySize();
+                if (gameData.inventory.size >= maxSize) {
+                    window.showNothingFound(`Inventory is full (${maxSize} items maximum)`);
+                    return;
+                }
+
+                try {
+                    window.showLoading('Scavenging', 'Searching the area for useful items...');
+
+                    // Call Ollama API to generate item
+                    const response = await fetch('/api/generate-item', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            context: gameData.currentLocation.description,
+                            difficulty: gameData.currentLocation.difficulty
+                        })
+                    });
+
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        throw new Error(errorData.details || 'Failed to generate item');
+                    }
+
+                    const itemData = await response.json();
+                    
+                    // Generate item image
+                    const imageResponse = await fetch('/api/generate-image', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            prompt: `A post-apocalyptic ${itemData.name}. ${itemData.description}. Detailed item, realistic style, worn and damaged appearance`,
+                            areaId: `item_${itemData.name.toLowerCase().replace(/[^a-z0-9]/g, '_')}`
+                        })
+                    });
+
+                    if (!imageResponse.ok) {
+                        const errorData = await imageResponse.json();
+                        throw new Error(errorData.details || 'Failed to generate image');
+                    }
+
+                    const imageData = await imageResponse.json();
+                    if (!imageData.success) {
+                        throw new Error(imageData.error || 'Failed to generate image');
+                    }
+
+                    // Create new item
+                    const newItem = {
+                        id: gameData.nextItemId,
+                        name: itemData.name,
+                        type: itemData.type,
+                        description: itemData.description,
+                        imageUrl: imageData.imageUrl.startsWith('/') ? imageData.imageUrl : `/${imageData.imageUrl}`
+                    };
+
+                    // Add to inventory
+                    gameData.inventory.set(newItem.id, newItem);
+                    gameData.nextItemId++;
+
+                    // Update stamina and time
+                    gameData.stats.stamina -= 20;
+                    advanceTime(2);
+
+                    // Update display
+                    updateInventoryDisplay();
+                    updateStatsDisplay();
+                    window.saveGameState(gameData);
+
+                    window.hideLoading();
+                    window.showNothingFound(`Found: ${newItem.name}`);
+
+                } catch (error) {
+                    console.error('Error in scavenge action:', error);
+                    window.hideLoading();
+                    window.showNothingFound(`Error: ${error.message}`);
+                }
+            });
+
+            window.equipItem = function(event, itemId) {
+                event.stopPropagation();
+                const item = gameData.inventory.get(itemId);
+                if (!item) return;
+
+                // Check if item is a weapon or clothing
+                if (item.type === 'weapon' || item.type === 'clothing') {
+                    // Unequip any previously equipped items of the same type
+                    gameData.inventory.forEach((existingItem) => {
+                        if (existingItem.type === item.type && existingItem.equipped) {
+                            existingItem.equipped = false;
+                        }
+                    });
+
+                    // Update player character attributes
+                    gameData.playerCharacter.attributes[item.type] = item.name;
+                    
+                    // Mark item as equipped
+                    item.equipped = true;
+                    
+                    // Save game state
+                    window.saveGameState(gameData);
+                    
+                    // Update displays
+                    updateInventoryDisplay();
+                    updatePlayerCharacterDisplay();
+                    
+                    window.showNothingFound(`${item.name} equipped successfully`);
+                } else {
+                    window.showNothingFound('Only weapons and clothing can be equipped');
+                }
+            };
+
+            // Add function to calculate max inventory size
+            function calculateMaxInventorySize() {
+                const str = parseInt(gameData.playerCharacter.attributes.STR) || 0;
+                const con = parseInt(gameData.playerCharacter.attributes.CON) || 0;
+                return 1 + Math.round(str / 5) + Math.round(con / 5);
+            }
+
+            // Add discard item function
+            window.discardItem = function(event, itemId) {
+                event.stopPropagation();
+                const item = gameData.inventory.get(itemId);
+                if (!item) return;
+
+                // If the item is equipped, unequip it first
+                if (item.equipped) {
+                    gameData.playerCharacter.attributes[item.type] = 'None';
+                }
+
+                // Remove the item from inventory
+                gameData.inventory.delete(itemId);
+                
+                // Save game state
+                window.saveGameState(gameData);
+                
+                // Update displays
+                updateInventoryDisplay();
+                updatePlayerCharacterDisplay();
+                
+                window.showNothingFound(`${item.name} discarded`);
+            };
+
+            // Update inventory display to include discard button
+            function updateInventoryDisplay() {
+                // Clear existing items
+                inventoryItems.innerHTML = '';
+
+                // Update inventory title with current/max size
+                const maxSize = calculateMaxInventorySize();
+                const currentSize = gameData.inventory.size;
+                document.querySelector('.inventory-title').textContent = `Inventory (${currentSize}/${maxSize})`;
+
+                // Add each item to the display
+                gameData.inventory.forEach((item, id) => {
+                    const itemElement = document.createElement('div');
+                    itemElement.className = 'inventory-item';
+                    const equippedText = item.equipped ? ' (equipped)' : '';
+                    itemElement.innerHTML = `
+                        <div class="inventory-item-image">
+                            <img src="${item.imageUrl}" alt="${item.name}">
+                        </div>
+                        <div class="inventory-item-name">${item.name}${equippedText}</div>
+                        <div class="inventory-item-type">${item.type}</div>
+                        <div class="inventory-item-actions">
+                            <button class="inventory-item-action-button equip" title="Equip" onclick="equipItem(event, ${item.id})">👕</button>
+                            <button class="inventory-item-action-button discard" title="Discard" onclick="discardItem(event, ${item.id})">🗑️</button>
+                        </div>
+                    `;
+                    itemElement.onclick = (e) => {
+                        if (!e.target.closest('.inventory-item-action-button')) {
+                            showItemDetails(item);
+                        }
+                    };
+                    inventoryItems.appendChild(itemElement);
+                });
+            }
         });
     </script>
 </body>
