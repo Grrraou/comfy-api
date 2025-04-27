@@ -2717,8 +2717,8 @@
                     gameData.areaConnections.set(initialArea.title, []);
                     gameData.areaNPCs.set(initialArea.title, []);
                     
-                    // Set random max linked areas (1-3) for the initial location
-                    gameData.maxLinkedAreas.set(initialArea.title, Math.floor(Math.random() * 3) + 1);
+                    // Set random max linked areas (2-4) for the initial location
+                    gameData.maxLinkedAreas.set(initialArea.title, Math.floor(Math.random() * 3) + 2);
 
                     // Increment area ID for next location
                     gameData.nextAreaId++;
@@ -2833,8 +2833,8 @@
                             );
                         }
                         
-                        // Set random max linked areas (1-3) for the new location
-                        gameData.maxLinkedAreas.set(newArea.title, Math.floor(Math.random() * 3) + 1);
+                        // Set random max linked areas (2-4) for the new location
+                        gameData.maxLinkedAreas.set(newArea.title, Math.floor(Math.random() * 3) + 2);
                     }
 
                     // Increment area ID for next location
