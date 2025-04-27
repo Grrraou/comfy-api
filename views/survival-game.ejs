@@ -2183,11 +2183,13 @@
                             Return a JSON object with a 'description' field containing a detailed battle narrative.
                             Player attributes: ${JSON.stringify(gameData.playerCharacter.attributes)}. 
                             NPC attributes: ${JSON.stringify(npc.data.attributes)}. 
+                            "playerDamage": // ALWAYS AN INTEGER, this is the amount of damage the NPC did to the Player
+                            "playerWon": true, // ALWAYS A BOOLEAN, this is true if the player won the battle
                             Example output:
                             {
                                 "description": "You engage in a brutal melee with the survivor. Your combat experience gives you the upper hand as you dodge their wild swings and land a solid hit with your baseball bat. The survivor stumbles back, clearly injured.",
-                                "playerWon": true, // ALWAYS A BOOLEAN, this is true if the player won the battle
-                                "playerDamage": 15 // ALWAYS AN INTEGER, this is the amount of damage the NPC did to the Player
+                                "playerWon": true,
+                                "playerDamage": 15 
                             }
                             Only return this JSON object structure without the comments, nothing else, no npcDamage, no npcWon. Only return the JSON object.
                         `,
@@ -2323,48 +2325,358 @@
             }
         };
 
-        window.executeNPC = function(event, npcId, npcName) {
+        window.executeNPC = async function(event, npcId, npcName) {
             event.stopPropagation();
+            
+            // Prevent multiple clicks by checking if loading overlay is already visible
+            if (document.getElementById('loadingOverlay').style.display !== 'none') {
+                return;
+            }
+            
             const gameData = window.loadGameState();
             const currentNPCs = gameData.areaNPCs.get(gameData.currentLocation.title) || [];
             const npcIndex = currentNPCs.findIndex(n => n.id === npcId);
             
             if (npcIndex !== -1) {
-                currentNPCs.splice(npcIndex, 1);
-                gameData.areaNPCs.set(gameData.currentLocation.title, currentNPCs);
-                window.saveGameState(gameData);
+                const npc = currentNPCs[npcIndex];
                 
-                // Clean up modal and styles
+                // Clean up battle modal first
                 const modal = document.querySelector('.modal');
                 const battleStyles = document.querySelector('style[data-battle]');
                 if (modal) document.body.removeChild(modal);
                 if (battleStyles) document.head.removeChild(battleStyles);
                 
-                // Restore game view
-                document.getElementById('gameState').style.display = 'block';
-                document.getElementById('loadingOverlay').style.display = 'none';
+                // Show initial loading overlay
+                window.showLoading('Looting', 'Preparing to loot...');
                 
-                // Update displays
-                window.displayNPCs();
-                window.showNothingFound(`${npcName} has been executed`);
+                try {
+                    // Loot weapon if NPC has one
+                    if (npc.data.attributes.weapon && npc.data.attributes.weapon !== 'None') {
+                        window.showLoading('Looting', `Taking ${npc.data.attributes.weapon}...`);
+                        
+                        // Generate weapon item
+                        const response = await fetch('/api/generate-item', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                context: `Generate a post-apocalyptic item that is exactly a ${npc.data.attributes.weapon}. The item must have the exact same name "${npc.data.attributes.weapon}" and must be of type "weapon". Only provide a description for this specific weapon.`,
+                                difficulty: gameData.currentLocation.difficulty
+                            })
+                        });
+
+                        if (!response.ok) {
+                            throw new Error('Failed to generate weapon item');
+                        }
+
+                        const itemData = await response.json();
+                        
+                        // Generate item image
+                        const imageResponse = await fetch('/api/generate-image', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                prompt: `A post-apocalyptic ${itemData.name}, (${itemData.type}:1.2). Detailed item, realistic style, (item:1.4)`,
+                                areaId: `item_${itemData.name.toLowerCase().replace(/[^a-z0-9]/g, '_')}`,
+                                width: 300,
+                                height: 300
+                            })
+                        });
+
+                        if (!imageResponse.ok) {
+                            throw new Error('Failed to generate weapon image');
+                        }
+
+                        const imageData = await imageResponse.json();
+                        if (!imageData.success) {
+                            throw new Error(imageData.error || 'Failed to generate image');
+                        }
+
+                        // Create new weapon item
+                        const newItem = {
+                            id: gameData.nextItemId,
+                            name: itemData.name,
+                            type: 'weapon',  // Force type to weapon for NPC weapons
+                            description: itemData.description,
+                            imageUrl: imageData.imageUrl.startsWith('/') ? imageData.imageUrl : `/${imageData.imageUrl}`
+                        };
+
+                        // Add to inventory
+                        gameData.inventory.set(newItem.id, newItem);
+                        gameData.nextItemId++;
+                        
+                        // Update NPC weapon to None
+                        npc.data.attributes.weapon = 'None';
+                        
+                        // Save game state after each item
+                        window.saveGameState(gameData);
+                        window.updateInventoryDisplay();
+                    }
+
+                    // Loot clothing if NPC has some
+                    if (npc.data.attributes.clothing && npc.data.attributes.clothing !== 'None') {
+                        window.showLoading('Looting', `Taking ${npc.data.attributes.clothing}...`);
+                        
+                        // Generate clothing item
+                        const response = await fetch('/api/generate-item', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                context: `Generate a post-apocalyptic item that is exactly a ${npc.data.attributes.clothing}. The item must have the exact same name "${npc.data.attributes.clothing}" and must be of type "clothing". Only provide a description for this specific clothing item.`,
+                                difficulty: gameData.currentLocation.difficulty
+                            })
+                        });
+
+                        if (!response.ok) {
+                            throw new Error('Failed to generate clothing item');
+                        }
+
+                        const itemData = await response.json();
+                        
+                        // Generate item image
+                        const imageResponse = await fetch('/api/generate-image', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                prompt: `A post-apocalyptic ${itemData.name}, (${itemData.type}:1.2). Detailed item, realistic style, (item:1.4)`,
+                                areaId: `item_${itemData.name.toLowerCase().replace(/[^a-z0-9]/g, '_')}`,
+                                width: 300,
+                                height: 300
+                            })
+                        });
+
+                        if (!imageResponse.ok) {
+                            throw new Error('Failed to generate clothing image');
+                        }
+
+                        const imageData = await imageResponse.json();
+                        if (!imageData.success) {
+                            throw new Error(imageData.error || 'Failed to generate image');
+                        }
+
+                        // Create new clothing item
+                        const newItem = {
+                            id: gameData.nextItemId,
+                            name: itemData.name,
+                            type: 'clothing',  // Force type to clothing for NPC clothing
+                            description: itemData.description,
+                            imageUrl: imageData.imageUrl.startsWith('/') ? imageData.imageUrl : `/${imageData.imageUrl}`
+                        };
+
+                        // Add to inventory
+                        gameData.inventory.set(newItem.id, newItem);
+                        gameData.nextItemId++;
+                        
+                        // Set NPC clothing to None
+                        npc.data.attributes.clothing = 'None';
+                        
+                        // Save game state after each item
+                        window.saveGameState(gameData);
+                        window.updateInventoryDisplay();
+                    }
+
+                    // Remove NPC and update game state
+                    currentNPCs.splice(npcIndex, 1);
+                    gameData.areaNPCs.set(gameData.currentLocation.title, currentNPCs);
+                    window.saveGameState(gameData);
+                    
+                    // Restore game view
+                    document.getElementById('gameState').style.display = 'block';
+                    document.getElementById('loadingOverlay').style.display = 'none';
+                    
+                    // Update displays
+                    window.displayNPCs();
+                    window.updateInventoryDisplay();
+                    window.showNothingFound(`${npcName} has been executed and looted`);
+                } catch (error) {
+                    console.error('Error during looting:', error);
+                    document.getElementById('loadingOverlay').style.display = 'none';
+                    window.showNothingFound('Failed to loot items. Please try again.');
+                }
             }
         };
 
-        window.releaseNPC = function(event, npcId, npcName) {
+        window.releaseNPC = async function(event, npcId, npcName) {
             event.stopPropagation();
             
-            // Clean up modal and styles
-            const modal = document.querySelector('.modal');
-            const battleStyles = document.querySelector('style[data-battle]');
-            if (modal) document.body.removeChild(modal);
-            if (battleStyles) document.head.removeChild(battleStyles);
+            // Prevent multiple clicks by checking if loading overlay is already visible
+            if (document.getElementById('loadingOverlay').style.display !== 'none') {
+                return;
+            }
             
-            // Restore game view
-            document.getElementById('gameState').style.display = 'block';
-            document.getElementById('loadingOverlay').style.display = 'none';
+            const gameData = window.loadGameState();
+            const currentNPCs = gameData.areaNPCs.get(gameData.currentLocation.title) || [];
+            const npcIndex = currentNPCs.findIndex(n => n.id === npcId);
             
-            // Just show the message, NPC stays in the area
-            window.showNothingFound(`${npcName} has been released`);
+            if (npcIndex !== -1) {
+                const npc = currentNPCs[npcIndex];
+                
+                // Clean up battle modal first
+                const modal = document.querySelector('.modal');
+                const battleStyles = document.querySelector('style[data-battle]');
+                if (modal) document.body.removeChild(modal);
+                if (battleStyles) document.head.removeChild(battleStyles);
+                
+                // Show initial loading overlay
+                window.showLoading('Looting', 'Preparing to loot...');
+                
+                try {
+                    // Loot weapon if NPC has one
+                    if (npc.data.attributes.weapon && npc.data.attributes.weapon !== 'None') {
+                        window.showLoading('Looting', `Taking ${npc.data.attributes.weapon}...`);
+                        
+                        // Generate weapon item
+                        const response = await fetch('/api/generate-item', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                context: `Generate a post-apocalyptic item that is exactly a ${npc.data.attributes.weapon}. The item must have the exact same name "${npc.data.attributes.weapon}" and must be of type "weapon". Only provide a description for this specific weapon.`,
+                                difficulty: gameData.currentLocation.difficulty
+                            })
+                        });
+
+                        if (!response.ok) {
+                            throw new Error('Failed to generate weapon item');
+                        }
+
+                        const itemData = await response.json();
+                        
+                        // Generate item image
+                        const imageResponse = await fetch('/api/generate-image', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                prompt: `A post-apocalyptic ${itemData.name}, (${itemData.type}:1.2). Detailed item, realistic style, (item:1.4)`,
+                                areaId: `item_${itemData.name.toLowerCase().replace(/[^a-z0-9]/g, '_')}`,
+                                width: 300,
+                                height: 300
+                            })
+                        });
+
+                        if (!imageResponse.ok) {
+                            throw new Error('Failed to generate weapon image');
+                        }
+
+                        const imageData = await imageResponse.json();
+                        if (!imageData.success) {
+                            throw new Error(imageData.error || 'Failed to generate image');
+                        }
+
+                        // Create new weapon item
+                        const newItem = {
+                            id: gameData.nextItemId,
+                            name: itemData.name,
+                            type: 'weapon',  // Force type to weapon for NPC weapons
+                            description: itemData.description,
+                            imageUrl: imageData.imageUrl.startsWith('/') ? imageData.imageUrl : `/${imageData.imageUrl}`
+                        };
+
+                        // Add to inventory
+                        gameData.inventory.set(newItem.id, newItem);
+                        gameData.nextItemId++;
+                        
+                        // Set NPC weapon to None
+                        npc.data.attributes.weapon = 'None';
+                        
+                        // Save game state after each item
+                        window.saveGameState(gameData);
+                        window.updateInventoryDisplay();
+                    }
+
+                    // Loot clothing if NPC has some
+                    if (npc.data.attributes.clothing && npc.data.attributes.clothing !== 'None') {
+                        window.showLoading('Looting', `Taking ${npc.data.attributes.clothing}...`);
+                        
+                        // Generate clothing item
+                        const response = await fetch('/api/generate-item', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                context: `Generate a post-apocalyptic item that is exactly a ${npc.data.attributes.clothing}. The item must have the exact same name "${npc.data.attributes.clothing}" and must be of type "clothing". Only provide a description for this specific clothing item.`,
+                                difficulty: gameData.currentLocation.difficulty
+                            })
+                        });
+
+                        if (!response.ok) {
+                            throw new Error('Failed to generate clothing item');
+                        }
+
+                        const itemData = await response.json();
+                        
+                        // Generate item image
+                        const imageResponse = await fetch('/api/generate-image', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                prompt: `A post-apocalyptic ${itemData.name}, (${itemData.type}:1.2). Detailed item, realistic style, (item:1.4)`,
+                                areaId: `item_${itemData.name.toLowerCase().replace(/[^a-z0-9]/g, '_')}`,
+                                width: 300,
+                                height: 300
+                            })
+                        });
+
+                        if (!imageResponse.ok) {
+                            throw new Error('Failed to generate clothing image');
+                        }
+
+                        const imageData = await imageResponse.json();
+                        if (!imageData.success) {
+                            throw new Error(imageData.error || 'Failed to generate image');
+                        }
+
+                        // Create new clothing item
+                        const newItem = {
+                            id: gameData.nextItemId,
+                            name: itemData.name,
+                            type: 'clothing',  // Force type to clothing for NPC clothing
+                            description: itemData.description,
+                            imageUrl: imageData.imageUrl.startsWith('/') ? imageData.imageUrl : `/${imageData.imageUrl}`
+                        };
+
+                        // Add to inventory
+                        gameData.inventory.set(newItem.id, newItem);
+                        gameData.nextItemId++;
+                        
+                        // Set NPC clothing to None
+                        npc.data.attributes.clothing = 'None';
+                        
+                        // Save game state after each item
+                        window.saveGameState(gameData);
+                        window.updateInventoryDisplay();
+                    }
+
+                    // Update NPC in game state
+                    gameData.areaNPCs.set(gameData.currentLocation.title, currentNPCs);
+                    window.saveGameState(gameData);
+
+                    // Restore game view
+                    document.getElementById('gameState').style.display = 'block';
+                    document.getElementById('loadingOverlay').style.display = 'none';
+                    
+                    // Update displays
+                    window.updateInventoryDisplay();
+                    window.showNothingFound(`${npcName} has been released and looted`);
+                } catch (error) {
+                    console.error('Error during looting:', error);
+                    document.getElementById('loadingOverlay').style.display = 'none';
+                    window.showNothingFound('Failed to loot items. Please try again.');
+                }
+            }
         };
 
         window.captureNPC = function(event, npcId, npcName) {
@@ -3869,83 +4181,78 @@
             });
 
             // Add inventory management functions
-            function updateInventoryDisplay() {
-                // Clear existing items
-                inventoryItems.innerHTML = '';
+            window.updateInventoryDisplay = function() {
+                const inventoryContainer = document.getElementById('inventoryItems');
+                if (!inventoryContainer) return;
 
-                // Update inventory title with current/max size
-                const maxSize = calculateMaxInventorySize();
-                const currentSize = gameData.inventory.size;
-                document.querySelector('.inventory-title').textContent = `Inventory (${currentSize}/${maxSize})`;
+                inventoryContainer.innerHTML = '';
+                const gameData = window.loadGameState();
+                const inventory = gameData.inventory;
 
-                // Add each item to the display
-                gameData.inventory.forEach((item, id) => {
+                inventory.forEach((item, id) => {
                     const itemElement = document.createElement('div');
                     itemElement.className = 'inventory-item';
-                    const equippedText = item.equipped ? ' (equipped)' : '';
-                    
-                    // Determine which action button to show
-                    let actionButton = '';
+                    itemElement.dataset.itemId = id;
+
+                    const itemImage = document.createElement('img');
+                    itemImage.src = item.imageUrl;
+                    itemImage.alt = item.name;
+                    itemImage.className = 'inventory-item-image';
+
+                    const itemName = document.createElement('div');
+                    itemName.className = 'inventory-item-name';
+                    itemName.textContent = item.name;
+
+                    const itemDescription = document.createElement('div');
+                    itemDescription.className = 'inventory-item-description';
+                    itemDescription.textContent = item.description;
+
+                    const itemActions = document.createElement('div');
+                    itemActions.className = 'inventory-item-actions';
+
+                    // Add appropriate action buttons based on item type
                     if (item.type === 'weapon' || item.type === 'clothing') {
-                        actionButton = `<button class="inventory-item-action-button equip" title="Equip" onclick="equipItem(event, ${item.id})">👕</button>`;
-                    } else if (item.type === 'consumable') {
-                        actionButton = `<button class="inventory-item-action-button use" title="Use" onclick="useItem(event, ${item.id})">🍽️</button>`;
+                        const equipButton = document.createElement('button');
+                        equipButton.className = 'inventory-item-action-button';
+                        equipButton.innerHTML = '<i class="fas fa-shield-alt"></i>';
+                        equipButton.title = 'Equip';
+                        equipButton.onclick = (e) => {
+                            e.stopPropagation();
+                            window.equipItem(id);
+                        };
+                        itemActions.appendChild(equipButton);
                     }
 
-                    itemElement.innerHTML = `
-                        <div class="inventory-item-image">
-                            <img src="${item.imageUrl}" alt="${item.name}">
-                        </div>
-                        <div class="inventory-item-name">${item.name}${equippedText}</div>
-                        <div class="inventory-item-type">${item.type}</div>
-                        <div class="inventory-item-actions">
-                            ${actionButton}
-                            <button class="inventory-item-action-button discard" title="Discard" onclick="discardItem(event, ${item.id})">🗑️</button>
-                        </div>
-                    `;
-                    itemElement.onclick = (e) => {
-                        if (!e.target.closest('.inventory-item-action-button')) {
-                            showItemDetails(item);
-                        }
+                    if (item.type === 'consumable') {
+                        const useButton = document.createElement('button');
+                        useButton.className = 'inventory-item-action-button';
+                        useButton.innerHTML = '<i class="fas fa-utensils"></i>';
+                        useButton.title = 'Use';
+                        useButton.onclick = (e) => {
+                            e.stopPropagation();
+                            window.useItem(id);
+                        };
+                        itemActions.appendChild(useButton);
+                    }
+
+                    const dropButton = document.createElement('button');
+                    dropButton.className = 'inventory-item-action-button';
+                    dropButton.innerHTML = '<i class="fas fa-trash"></i>';
+                    dropButton.title = 'Drop';
+                    dropButton.onclick = (e) => {
+                        e.stopPropagation();
+                        window.dropItem(id);
                     };
-                    inventoryItems.appendChild(itemElement);
+                    itemActions.appendChild(dropButton);
+
+                    itemElement.appendChild(itemImage);
+                    itemElement.appendChild(itemName);
+                    itemElement.appendChild(itemDescription);
+                    itemElement.appendChild(itemActions);
+
+                    inventoryContainer.appendChild(itemElement);
                 });
-            }
-
-            function showItemDetails(item) {
-                const modal = document.createElement('div');
-                modal.className = 'npc-modal';
-                modal.innerHTML = `
-                    <div class="npc-modal-content">
-                        <button class="npc-modal-close">&times;</button>
-                        <div class="npc-modal-left">
-                            <div class="npc-modal-image">
-                                <img src="${item.imageUrl}" alt="${item.name}">
-                            </div>
-                        </div>
-                        <div class="npc-modal-right">
-                            <div class="npc-modal-header">
-                                <h3 class="npc-modal-name">${item.name}</h3>
-                                <p class="npc-modal-description">${item.description}</p>
-                            </div>
-                            <div class="npc-modal-attributes">
-                                <div class="npc-modal-attribute">
-                                    <div class="npc-modal-attribute-label">Type</div>
-                                    <div class="npc-modal-attribute-value">${item.type}</div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                `;
-
-                // Add close button functionality
-                modal.querySelector('.npc-modal-close').onclick = () => modal.remove();
-                modal.onclick = (e) => {
-                    if (e.target === modal) modal.remove();
-                };
-
-                document.body.appendChild(modal);
-            }
+            };
 
             // Add scavenge action handler
             scavengeButton.addEventListener('click', async () => {
