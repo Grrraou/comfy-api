@@ -630,6 +630,7 @@ app.post('/api/ollama', async (req, res) => {
                     "hairColor": "string",
                     "ethnicity": "string",
                     "clothing": "string",
+                    "weapon": "string",
                     "personality": "string",
                     "height": "string",
                     "weight": "string"
