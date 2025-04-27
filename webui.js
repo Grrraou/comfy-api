@@ -617,12 +617,12 @@ app.post('/api/ollama', async (req, res) => {
                 "name": "string",
                 "description": "string",
                 "attributes": {
-                    "STR": "number", (Strength - Physical power, 1-18)
-                    "DEX": "number", (Dexterity - Agility and reflexes, 1-18)
-                    "CON": "number", (Constitution - Endurance and health, 1-18)
-                    "INT": "number", (Intelligence - Reasoning and knowledge, 1-18)
-                    "WIS": "number", (Wisdom - Perception and insight, 1-18)
-                    "CHA": "number", (Charisma - Personality and leadership, 1-18)
+                    "STR": "number", (Strength - Physical power, depends on the difficulty level)
+                    "DEX": "number", (Dexterity - Agility and reflexes, depends on the difficulty level)
+                    "CON": "number", (Constitution - Endurance and health, depends on the difficulty level)
+                    "INT": "number", (Intelligence - Reasoning and knowledge, depends on the difficulty level)
+                    "WIS": "number", (Wisdom - Perception and insight, depends on the difficulty level)
+                    "CHA": "number", (Charisma - Personality and leadership, depends on the difficulty level)
                     "gender": "string", (Male or Female)
                     "age": "string", (young, middle-aged, or elderly)
                     "bodyType": "string", (slim, athletic, curvy, muscular, average)
@@ -638,6 +638,7 @@ app.post('/api/ollama', async (req, res) => {
                 "background": "string",
                 "additionalDetails": "string"
             }
+            The MAX total number of total points for STR, DEX, CON, INT, WIS, CHA is a random number between (1+difficulty level) * 2 and (1+difficulty level) * 5.
             Do not include any text outside the JSON object. Do not include markdown formatting. The response must be parseable as JSON.[VERY IMPORTANT ONLY RESPOND IN JSON RESPECTING THE STRUCTURE ABOVE]`;
         } else if (role === "sd-prompt") {
             systemMessage = "You are a Stable Diffusion prompt generator. Convert descriptions into optimized keyword-based prompts. Use parentheses for emphasis, commas for separation, and avoid long sentences. Focus on key visual elements and artistic styles. Example format: (detailed face), (asian female), (warrior armor), (dynamic pose), (epic lighting), (digital art), (highly detailed), (sharp focus).";

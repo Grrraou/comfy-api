@@ -1554,7 +1554,8 @@
                 thirst: 100,
                 stamina: 100
             },
-            playerCharacter: null
+            playerCharacter: null,
+            difficulty: 1
         };
 
         // Define utility functions in the global scope
@@ -1591,7 +1592,8 @@
                             thirst: 100,
                             stamina: 100
                         },
-                        playerCharacter: parsed.playerCharacter || null
+                        playerCharacter: parsed.playerCharacter || null,
+                        difficulty: parsed.difficulty || 1
                     };
 
                     return loadedGameState;
@@ -1640,7 +1642,8 @@
                     currentTime: gameData.currentTime,
                     worldDescription: gameData.worldDescription,
                     stats: gameData.stats,
-                    playerCharacter: gameData.playerCharacter
+                    playerCharacter: gameData.playerCharacter,
+                    difficulty: gameData.difficulty
                 };
 
                 // Save to localStorage
@@ -2133,7 +2136,8 @@
 
             function displayCurrentLocation() {
                 if (gameData.currentLocation) {
-                    locationTitle.textContent = gameData.currentLocation.title;
+                    const locationData = gameData.visitedLocations.get(gameData.currentLocation.title);
+                    locationTitle.textContent = `${gameData.currentLocation.title} (Difficulty ${locationData.difficulty})`;
                     locationText.textContent = gameData.currentLocation.description;
                     if (gameData.currentLocation.imageUrl) {
                         locationImage.src = gameData.currentLocation.imageUrl;
@@ -2180,8 +2184,9 @@
                         const link = document.createElement('a');
                         link.className = `area-link ${position}`;
                         link.href = '#';
+                        const locationData = gameData.visitedLocations.get(area.title);
                         link.innerHTML = `
-                            <span>→ ${area.title}</span>
+                            <span>→ ${area.title} (Difficulty ${locationData.difficulty})</span>
                             <div class="area-thumb">
                                 <img src="${area.imageUrl}" alt="${area.title}">
                             </div>
@@ -2278,7 +2283,7 @@
                             'Content-Type': 'application/json'
                         },
                         body: JSON.stringify({
-                            prompt: `Generate character in this world: ${gameData.worldDescription}. Current location: ${gameData.currentLocation.title}. Location description: ${gameData.currentLocation.description}. Include D&D-style attributes (STR, DEX, CON, INT, WIS, CHA) with values between 3 and 18.`,
+                            prompt: `Generate character in this world: ${gameData.worldDescription}. Current location: ${gameData.currentLocation.title}. Location description: ${gameData.currentLocation.description}. Location difficulty level: ${gameData.visitedLocations.get(gameData.currentLocation.title).difficulty}. Include D&D-style attributes (STR, DEX, CON, INT, WIS, CHA) with values between 3 and ${Math.min(18, 3 + Math.floor(gameData.visitedLocations.get(gameData.currentLocation.title).difficulty / 2))}.`,
                             model: window.config.defaultOllamaModel,
                             role: 'character_builder',
                             stream: false
@@ -2552,7 +2557,9 @@
                             hunger: 100,
                             thirst: 100,
                             stamina: 100
-                        }
+                        },
+                        playerCharacter: null,
+                        difficulty: 1
                     };
                     
                     // Force reload the page after a short delay to ensure localStorage is cleared
@@ -2710,7 +2717,8 @@
                     gameData.visitedLocations.set(locationData.title, {
                         description: locationData.description,
                         imageUrl: imageUrl,
-                        areaId: gameData.nextAreaId
+                        areaId: gameData.nextAreaId,
+                        difficulty: Math.floor(Math.random() * (gameData.visitedLocations.size * 3)) + gameData.visitedLocations.size
                     });
 
                     // Initialize connections for the initial area
@@ -2812,7 +2820,8 @@
                     gameData.visitedLocations.set(locationData.title, {
                         description: locationData.description,
                         imageUrl: imageUrl,
-                        areaId: gameData.nextAreaId
+                        areaId: gameData.nextAreaId,
+                        difficulty: Math.floor(Math.random() * (gameData.visitedLocations.size * 3)) + gameData.visitedLocations.size
                     });
 
                     // Create bidirectional connection between current and new area
@@ -2898,7 +2907,9 @@
                         hunger: 100,
                         thirst: 100,
                         stamina: 100
-                    }
+                    },
+                    playerCharacter: null,
+                    difficulty: 1
                 };
                 
                 // Hide game over screen and show start screen
@@ -3175,7 +3186,8 @@
                                 thirst: 100,
                                 stamina: 100
                             },
-                            playerCharacter: parsed.playerCharacter || null
+                            playerCharacter: parsed.playerCharacter || null,
+                            difficulty: parsed.difficulty || 1
                         };
 
                         return gameState;
@@ -3204,7 +3216,8 @@
                         thirst: 100,
                         stamina: 100
                     },
-                    playerCharacter: null
+                    playerCharacter: null,
+                    difficulty: 1
                 };
             };
 
