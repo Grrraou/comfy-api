@@ -1,6 +1,8 @@
 # Local AI API Sandbox
 
 A comprehensive web interface for interacting with local AI services, including ComfyUI for image generation and Ollama for text generation. The project provides a sandbox environment for testing and integrating various AI capabilities through a unified web interface.
+Requieres https://www.comfy.org/ & https://ollama.com/ endpoints (local or hosted)
+sponsored link to templated server rental: https://cloud.vast.ai/?ref_id=241042 or https://cloud.vast.ai with no affiliation.
 
 ## Features
 
@@ -32,6 +34,9 @@ A comprehensive web interface for interacting with local AI services, including 
 
   <img src="docs/screenshots/infinite-adventure.png" alt="Infinite Adventure" width="800"/>
   <p><em>Infinite Adventure - Explore AI-generated worlds</em></p>
+
+  <img src="docs/screenshots/survival-game.png" alt="Survival Game" width="800"/>
+  <p><em>Survival Game - AI-powered survival simulation</em></p>
 
   
 </div>
@@ -106,6 +111,38 @@ A comprehensive web interface for interacting with local AI services, including 
 - Test connection to services
 - Verify required nodes (e.g., Rembg)
 - View installation instructions for missing components
+
+### Survival Game
+- AI-powered survival simulation game
+- Dynamic world generation with ComfyUI
+- Real-time status tracking (health, hunger, thirst, energy)
+- Day/night cycle with time management
+- Resource gathering and crafting system
+- AI-generated events and challenges
+- Persistent game state across sessions
+- Customizable character and world settings
+- Interactive decision-making with AI consequences
+- Weather system affecting gameplay
+- Inventory management
+- Base building and territory expansion
+- AI-driven NPC interactions
+- Dynamic difficulty scaling
+- Survival statistics and achievements
+
+The survival game combines AI image generation with interactive gameplay elements. The world and events are dynamically generated using ComfyUI, while the game mechanics are managed through a sophisticated state system. Players must manage their character's basic needs while exploring, gathering resources, and building their base. The AI generates unique challenges and events based on the player's current situation, making each playthrough different.
+
+Key features:
+- **Dynamic World Generation**: The game world is procedurally generated using AI, creating unique landscapes and environments
+- **Resource Management**: Players must balance health, hunger, thirst, and energy while gathering resources
+- **Crafting System**: Create tools, weapons, and shelter using gathered materials
+- **AI Events**: Random events and challenges are generated based on the current game state
+- **Day/Night Cycle**: Time management affects gameplay and resource availability
+- **Weather System**: Dynamic weather affects gameplay mechanics and survival strategies
+- **NPC Interactions**: AI-driven characters with unique behaviors and responses
+- **Base Building**: Construct and expand your survival base
+- **Achievement System**: Track progress and unlock special rewards
+
+The game uses ComfyUI for generating the visual elements of the world and events, while maintaining a persistent state to track the player's progress and the world's evolution. The AI integration allows for dynamic storytelling and unique gameplay experiences with each session.
 
 ## Available Commands
 

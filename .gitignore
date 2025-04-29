@@ -26,4 +26,7 @@ logs/
 
 # Build output
 dist/
-build/ 
+build/
+
+# Standalone pages
+anon.html 
