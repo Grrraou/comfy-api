@@ -17,6 +17,26 @@ sponsored link to templated server rental: https://cloud.vast.ai/?ref_id=241042 
   - Default model: [DreamShaper 8](https://civitai.com/models/4384/dreamshaper)
   - Support for custom models and configurations
 
+## Random Image Generator (No Build Required)
+
+The `randomGenerator.html` file is a standalone tool that can be used directly in a browser - no build or installation required. Just open the file in your browser and start generating images!
+
+### Quick Start
+1. Make sure ComfyUI is running
+2. Open `randomGenerator.html` in your browser
+3. Install a CORS extension for your browser (required for local development)
+4. Start generating images!
+
+### Features
+- Token-based prompt generation (e.g., `[LANDSCAPE]`, `[STYLE]`)
+- Save and load configurations
+- Manage custom tokens
+- Import/Export settings
+- Works on both desktop and mobile
+
+### Configuration
+The ComfyUI endpoint is configured in the script with a default value of `http://localhost:8188`. You can change this by editing the `COMFYUI_API` constant in the script.
+
 ## Screenshots
 
 <div align="center">
@@ -37,6 +57,9 @@ sponsored link to templated server rental: https://cloud.vast.ai/?ref_id=241042 
 
   <img src="docs/screenshots/survival-game.png" alt="Survival Game" width="800"/>
   <p><em>Survival Game - AI-powered survival simulation</em></p>
+
+  <img src="docs/screenshots/random-image-generator.png" alt="Survival Game" width="800"/>
+  <p><em>Standalone comfyUI simple config manager with randomness handling</em></p>
 
   
 </div>
